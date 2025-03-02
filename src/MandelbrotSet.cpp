@@ -3,6 +3,7 @@
 //
 
 #include "mandelbrot/MandelbrotSet.h"
+#include <opencv2/imgproc.hpp>
 
 namespace Mandelbrot {
     MandelbrotSet::MandelbrotSet(size_t width, size_t height) {
@@ -72,6 +73,40 @@ namespace Mandelbrot {
             }
         }
         return MAX_ITERATIONS;
+    }
+
+    cv::Vec3b MandelbrotSet::compute_color(size_t escape_time) {
+        if (escape_time == MAX_ITERATIONS) {
+            return cv::Vec3b(0, 0, 0);
+        }
+
+        double hue = 255 * fmod(escape_time * 0.3, 1.0);
+        double sat = 255;
+        double val = (escape_time < MAX_ITERATIONS) ? 255 : 0;
+
+        cv::Mat hsv(1, 1, CV_8UC3, cv::Scalar(hue, sat, val));
+        cv::Mat bgr;
+        cv::cvtColor(hsv, bgr, cv::COLOR_HSV2BGR);
+        return bgr.at<cv::Vec3b>(0, 0);
+    }
+
+    cv::Mat MandelbrotSet::generateImage() const {
+        cv::Mat image(height_, width_, CV_8UC3);
+
+        const double xscale = (x_max_ - x_min_) / width_;
+        const double yscale = (y_max_ - y_min_) / height_;
+
+        for (auto y = 0u; y < height_; ++y) {
+            for (auto x = 0u; x < width_; ++x) {
+                double xcoord = x_min_ + x * xscale;
+                double ycoord = y_min_ + y * yscale;
+                std::complex<double> c(xcoord, ycoord);
+                size_t escape_time = compute_escape_time(c);
+                image.at<cv::Vec3b>(y, x) = compute_color(escape_time);
+            }
+        }
+
+        return image;
     }
 
 
