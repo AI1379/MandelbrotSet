@@ -73,6 +73,8 @@ namespace Mandelbrot {
     }
 
     cv::Mat MandelbrotSetCuda::generateImpl() const {
+        initialize();
+
         uchar3 *d_image;
         CHECK_CUDA(cudaMalloc(&d_image, width_ * height_ * sizeof(uchar3)));
 
