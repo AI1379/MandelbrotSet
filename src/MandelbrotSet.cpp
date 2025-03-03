@@ -96,8 +96,9 @@ namespace Mandelbrot {
         const double xscale = (x_max_ - x_min_) / width_;
         const double yscale = (y_max_ - y_min_) / height_;
 
-        for (auto y = 0u; y < height_; ++y) {
-            for (auto x = 0u; x < width_; ++x) {
+#pragma omp parallel for
+        for (auto y = 0; y < height_; ++y) {
+            for (auto x = 0; x < width_; ++x) {
                 double xcoord = x_min_ + x * xscale;
                 double ycoord = y_min_ + y * yscale;
                 std::complex<double> c(xcoord, ycoord);
