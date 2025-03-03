@@ -3,8 +3,8 @@
 //
 
 #include "mandelbrot/MandelbrotSet.h"
-#include "mandelbrot/BaseMandelbrotSet.h"
 #include <opencv2/imgproc.hpp>
+#include "mandelbrot/BaseMandelbrotSet.h"
 
 namespace Mandelbrot {
     size_t MandelbrotSet::computeEscapeTime(const std::complex<double> &c) {

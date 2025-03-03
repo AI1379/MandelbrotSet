@@ -5,63 +5,53 @@
 #ifndef MANDELBROTSET_INCLUDE_MANDELBROT_BASEMANDELBROTSET_H
 #define MANDELBROTSET_INCLUDE_MANDELBROT_BASEMANDELBROTSET_H
 
-#include <concepts>
-#include <type_traits>
-
 namespace Mandelbrot {
     template<typename Derived>
     class BaseMandelbrotSet {
     public:
-        friend class BaseMandelbrotSet<Derived>;
-
         BaseMandelbrotSet() = default;
         BaseMandelbrotSet(const size_t width, const size_t height) : width_(width), height_(height) {
             x_min_ = y_min_ = -2.0;
             x_max_ = y_max_ = 2.0;
         }
 
-        [[nodiscard]] size_t getWidth(this Derived &self) { return self.width_; }
-        [[nodiscard]] size_t getHeight(this Derived &self) { return self.height_; }
-        [[nodiscard]] double getXMin(this Derived &self) { return self.x_min_; }
-        [[nodiscard]] double getXMax(this Derived &self) { return self.x_max_; }
-        [[nodiscard]] double getYMin(this Derived &self) { return self.y_min_; }
-        [[nodiscard]] double getYMax(this Derived &self) { return self.y_max_; }
+        [[nodiscard]] size_t getWidth() const { return static_cast<const Derived *>(this)->width_; }
+        [[nodiscard]] size_t getHeight() const { return static_cast<const Derived *>(this)->height_; }
+        [[nodiscard]] double getXMin() const { return static_cast<const Derived *>(this)->x_min_; }
+        [[nodiscard]] double getXMax() const { return static_cast<const Derived *>(this)->x_max_; }
+        [[nodiscard]] double getYMin() const { return static_cast<const Derived *>(this)->y_min_; }
+        [[nodiscard]] double getYMax() const { return static_cast<const Derived *>(this)->y_max_; }
 
-        Derived &setWidth(this Derived &self, size_t width) {
-            self.width_ = width;
-            return self;
+        Derived &setWidth(size_t width) {
+            static_cast<Derived *>(this)->width_ = width;
+            return *static_cast<Derived *>(this);
         }
-        Derived &setHeight(this Derived &self, size_t height) {
-            self.height_ = height;
-            return self;
+        Derived &setHeight(size_t height) {
+            static_cast<Derived *>(this)->height_ = height;
+            return *static_cast<Derived *>(this);
         }
-        Derived &setXMin(this Derived &self, double x_min) {
-            self.x_min_ = x_min;
-            return self;
+        Derived &setXMin(double x_min) {
+            static_cast<Derived *>(this)->x_min_ = x_min;
+            return *static_cast<Derived *>(this);
         }
-        Derived &setXMax(this Derived &self, double x_max) {
-            self.x_max_ = x_max;
-            return self;
+        Derived &setXMax(double x_max) {
+            static_cast<Derived *>(this)->x_max_ = x_max;
+            return *static_cast<Derived *>(this);
         }
-        Derived &setYMin(this Derived &self, double y_min) {
-            self.y_min_ = y_min;
-            return self;
+        Derived &setYMin(double y_min) {
+            static_cast<Derived *>(this)->y_min_ = y_min;
+            return *static_cast<Derived *>(this);
         }
-        Derived &setYMax(this Derived &self, double y_max) {
-            self.y_max_ = y_max;
-            return self;
+        Derived &setYMax(double y_max) {
+            static_cast<Derived *>(this)->y_max_ = y_max;
+            return *static_cast<Derived *>(this);
         }
-        Derived &setXRange(this Derived &self, double x_min, double x_max) {
-            return self.setXMin(x_min).setXMax(x_max);
-        }
-        Derived &setYRange(this Derived &self, double y_min, double y_max) {
-            return self.setYMin(y_min).setYMax(y_max);
-        }
-        Derived &setResolution(this Derived &self, size_t width, size_t height) {
-            return self.setWidth(width).setHeight(height);
-        }
+        Derived &setXRange(double x_min, double x_max) { return setXMin(x_min).setXMax(x_max); }
+        Derived &setYRange(double y_min, double y_max) { return setYMin(y_min).setYMax(y_max); }
+        Derived &setResolution(size_t width, size_t height) { return setWidth(width).setHeight(height); }
 
-        [[nodiscard]] cv::Mat generate(this Derived &self) { return self.generateImpl(); }
+        [[nodiscard]] cv::Mat generate() const { return static_cast<const Derived *>(this)->generateImpl(); }
+
 
     protected:
         size_t width_, height_;

@@ -1,6 +1,6 @@
 set(MANDELBROT_SET_LIBRARY_SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSet.cpp
-        #        ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSetCuda.cu
+        ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSetCuda.cu
 )
 
 find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc)

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <opencv2/imgcodecs.hpp>
 #include "mandelbrot/MandelbrotSet.h"
+#include "mandelbrot/MandelbrotSetCuda.h"
 
 using namespace cv;
 using namespace std;
@@ -49,6 +50,17 @@ int main(int argc, char **argv) {
     std::cout << "Time taken to generate the image: " << diff.count() << " seconds" << std::endl;
 
     imwrite("MandelbrotSet.png", image);
+
+    Mandelbrot::MandelbrotSetCuda mandelbrot_set_cuda;
+    mandelbrot_set_cuda.setResolution(width, height).setXRange(zp.xmin, zp.xmax).setYRange(zp.ymin, zp.ymax);
+
+    start = std::chrono::steady_clock::now();
+    const auto image_cuda = mandelbrot_set_cuda.generate();
+    end = std::chrono::steady_clock::now();
+    diff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+    std::cout << "Time taken to generate the image using CUDA: " << diff.count() << " seconds" << std::endl;
+
+    imwrite("MandelbrotSetCuda.png", image_cuda);
 
     return 0;
 }
