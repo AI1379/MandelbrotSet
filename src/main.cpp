@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
 
     imwrite("MandelbrotSet.png", image);
 
+#if ENABLE_CUDA
     Mandelbrot::MandelbrotSetCuda mandelbrot_set_cuda;
     mandelbrot_set_cuda.setResolution(width, height).setXRange(zp.xmin, zp.xmax).setYRange(zp.ymin, zp.ymax);
 
@@ -61,6 +62,7 @@ int main(int argc, char **argv) {
     std::cout << "Time taken to generate the image using CUDA: " << diff.count() << " seconds" << std::endl;
 
     imwrite("MandelbrotSetCuda.png", image_cuda);
+#endif
 
     return 0;
 }
