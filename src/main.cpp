@@ -5,6 +5,7 @@
 #include <chrono>
 #include <iostream>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 #include "mandelbrot/MandelbrotSet.h"
 #include "mandelbrot/MandelbrotSetCuda.h"
 
@@ -38,7 +39,10 @@ int main(int argc, char **argv) {
     auto height = args.height;
 
     ZoomParams zp{-2.0, 1.0, -1.5, 1.5};
+    std::chrono::steady_clock::time_point start, end;
+    std::chrono::duration<double> diff{};
 
+#if 0
     Mandelbrot::MandelbrotSet mandelbrot(width, height);
 
     mandelbrot.setXRange(zp.xmin, zp.xmax).setYRange(zp.ymin, zp.ymax);
@@ -50,6 +54,8 @@ int main(int argc, char **argv) {
     std::cout << "Time taken to generate the image: " << diff.count() << " seconds" << std::endl;
 
     imwrite("MandelbrotSet.png", image);
+#endif
+
 
 #if ENABLE_CUDA
     Mandelbrot::MandelbrotSetCuda mandelbrot_set_cuda;
