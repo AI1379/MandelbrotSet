@@ -8,7 +8,6 @@
 #include <opencv2/core.hpp>
 #include "mandelbrot/BaseMandelbrotSet.h"
 
-
 namespace Mandelbrot {
     class MandelbrotSetCuda : public BaseMandelbrotSet<MandelbrotSetCuda> {
         using Base = BaseMandelbrotSet<MandelbrotSetCuda>;

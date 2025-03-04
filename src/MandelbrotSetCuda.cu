@@ -5,6 +5,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include "mandelbrot/MandelbrotSetCuda.h"
+#include "mandelbrot/ExtendedDouble.cuh"
 
 #define CHECK_CUDA(err)                                                                                                \
     do {                                                                                                               \

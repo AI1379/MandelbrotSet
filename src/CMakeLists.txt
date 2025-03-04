@@ -10,9 +10,13 @@ set(MANDELBROT_SET_LIBRARY_SOURCE
 )
 
 if (ENABLE_CUDA)
-    list(APPEND MANDELBROT_SET_LIBRARY_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSetCuda.cu)
+    list(APPEND MANDELBROT_SET_LIBRARY_SOURCE
+            ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSetCuda.cu
+            ${CMAKE_CURRENT_SOURCE_DIR}/ExtendedDouble.cu)
     add_definitions(-DENABLE_CUDA)
 endif ()
+
+message(STATUS "Library sources: ${MANDELBROT_SET_LIBRARY_SOURCE}")
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 

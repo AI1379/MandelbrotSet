@@ -6,8 +6,10 @@
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
+#include <opencv2/core/utils/logger.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
 #include "mandelbrot/MandelbrotSet.h"
 #include "mandelbrot/MandelbrotSetCuda.h"
 
@@ -102,10 +104,91 @@ CommandLineArguments parseArguments(int argc, char **argv_raw) {
     return args;
 }
 
+vector<Mat> precomputeScaleMatrices(const Point2f &center, double scale_rate, int frames) {
+    vector<Mat> scale_matrices(frames);
+    double factor = 1.0;
+    for (int i = 0; i < frames; ++i) {
+        scale_matrices[i] = getRotationMatrix2D(center, 0, factor);
+        factor *= scale_rate;
+    }
+    return scale_matrices;
+}
+
 int main(int argc, char **argv) {
+    setLogLevel(utils::logging::LogLevel::LOG_LEVEL_SILENT);
+
+    // Some constants for the zooming animation. We may make them configurable later.
+    constexpr int MAX_STEP = 10;
+    constexpr double ZOOM_FACTOR = 4.0;
+    constexpr double SCALE_RATE = 1.03;
 
 
-#if 1
+    // Seahorse Valley. We need a more precise center for this.
+    constexpr double xcenter = -0.74525, ycenter = 0.12265;
+
+    // Image resolution
+    constexpr int width = 4096, height = 4096;
+
+    const int frame_count = ceil(log(ZOOM_FACTOR) / log(SCALE_RATE));
+
+    Mandelbrot::MandelbrotSetCuda mandelbrot_set_cuda;
+    mandelbrot_set_cuda.setResolution(width, height);
+
+    VideoWriter writer;
+    writer.open("MandelbrotSetCuda.mp4", VideoWriter::fourcc('h', 'v', 'c', 'l'), 30, Size(width, height), true);
+    Point2f center(width / 2.0, height / 2.0);
+
+
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    auto scale_matrices = precomputeScaleMatrices(center, SCALE_RATE, frame_count);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    auto diff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+    cout << "Time taken to precompute scale matrices: " << diff.count() << " seconds" << endl;
+
+    vector<Mat> frames(frame_count);
+
+    for (uint64_t i = 0, factor = (1 << i); i < MAX_STEP; ++i, factor *= ZOOM_FACTOR) {
+
+        mandelbrot_set_cuda.setCenter(xcenter, ycenter, 4.0 / factor);
+
+        start = std::chrono::steady_clock::now();
+        const auto image = mandelbrot_set_cuda.generate();
+        end = std::chrono::steady_clock::now();
+        diff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+        std::cout << "Time taken to generate frame " << i + 1 << ": " << diff.count() << " seconds" << std::endl;
+
+        auto filename = std::format("frames/MandelbrotSetCudaFrame{}.png", i + 1);
+        imwrite(filename, image);
+
+        if (i == MAX_STEP - 1)
+            break;
+
+        std::cout << "Start generating frames between " << i + 1 << " and " << i + 2 << std::endl;
+
+        start = std::chrono::steady_clock::now();
+
+#if ENABLE_OPENMP
+#pragma omp parallel for
+#endif
+        for (int idx = 0; idx < frame_count; ++idx) {
+            warpAffine(image, frames[idx], scale_matrices[idx], Size(width, height));
+        }
+
+        for (auto &frame: frames) {
+            writer.write(frame);
+        }
+
+        end = std::chrono::steady_clock::now();
+        diff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+        std::cout << "Time taken to generate frames between " << i + 1 << " and " << i + 2 << ": " << diff.count()
+                  << " seconds" << std::endl;
+    }
+
+    writer.release();
+
+#if 0
     auto args = parseArguments(argc, argv);
 
     auto width = args.width;
