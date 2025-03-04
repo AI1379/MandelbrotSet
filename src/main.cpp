@@ -21,22 +21,23 @@ struct ZoomParams {
 struct CommandLineArguments {
     size_t width;
     size_t height;
-    double xmin, xmax, ymin, ymax;
-    double xcenter, ycenter, xsize;
+    double x_min, x_max, y_min, y_max;
+    double x_center, y_center, xsize;
     bool use_center;
 };
 
-CommandLineArguments parseArguments(int argc, char **argv) {
+CommandLineArguments parseArguments(int argc, char **argv_raw) {
     CommandLineArguments args = {.width = 1024,
                                  .height = 1024,
-                                 .xmin = -2.0,
-                                 .xmax = 2.0,
-                                 .ymin = -2.0,
-                                 .ymax = 2.0,
-                                 .xcenter = 0.0,
-                                 .ycenter = 0.0,
+                                 .x_min = -2.0,
+                                 .x_max = 2.0,
+                                 .y_min = -2.0,
+                                 .y_max = 2.0,
+                                 .x_center = 0.0,
+                                 .y_center = 0.0,
                                  .xsize = 4.0,
                                  .use_center = false};
+    vector<string> argv(argv_raw, argv_raw + argc);
     for (size_t i = 1; i < argc; i++) {
         if (argv[i] == "--resolution") {
             assert(i + 2 < argc);
@@ -53,31 +54,31 @@ CommandLineArguments parseArguments(int argc, char **argv) {
             ++i;
         } else if (argv[i] == "--xmin") {
             assert(i + 1 < argc);
-            args.xmin = std::stod(argv[i + 1]);
+            args.x_min = std::stod(argv[i + 1]);
             ++i;
         } else if (argv[i] == "--xmax") {
             assert(i + 1 < argc);
-            args.xmax = std::stod(argv[i + 1]);
+            args.x_max = std::stod(argv[i + 1]);
             ++i;
         } else if (argv[i] == "--ymin") {
             assert(i + 1 < argc);
-            args.ymin = std::stod(argv[i + 1]);
+            args.y_min = std::stod(argv[i + 1]);
             ++i;
         } else if (argv[i] == "--ymax") {
             assert(i + 1 < argc);
-            args.ymax = std::stod(argv[i + 1]);
+            args.y_max = std::stod(argv[i + 1]);
             ++i;
         } else if (argv[i] == "--range") {
             assert(i + 4 < argc);
-            args.xmin = std::stod(argv[i + 1]);
-            args.xmax = std::stod(argv[i + 2]);
-            args.ymin = std::stod(argv[i + 3]);
-            args.ymax = std::stod(argv[i + 4]);
+            args.x_min = std::stod(argv[i + 1]);
+            args.x_max = std::stod(argv[i + 2]);
+            args.y_min = std::stod(argv[i + 3]);
+            args.y_max = std::stod(argv[i + 4]);
             i += 4;
         } else if (argv[i] == "--center") {
             assert(i + 3 < argc);
-            args.xcenter = std::stod(argv[i + 1]);
-            args.ycenter = std::stod(argv[i + 2]);
+            args.x_center = std::stod(argv[i + 1]);
+            args.y_center = std::stod(argv[i + 2]);
             args.xsize = std::stod(argv[i + 3]);
             args.use_center = true;
             i += 3;
@@ -102,6 +103,9 @@ CommandLineArguments parseArguments(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
+
+
+#if 1
     auto args = parseArguments(argc, argv);
 
     auto width = args.width;
@@ -129,10 +133,16 @@ int main(int argc, char **argv) {
     Mandelbrot::MandelbrotSetCuda mandelbrot_set_cuda;
     mandelbrot_set_cuda.setResolution(width, height);
     if (args.use_center) {
-        mandelbrot_set_cuda.setCenter(args.xcenter, args.ycenter, args.xsize);
+        mandelbrot_set_cuda.setCenter(args.x_center, args.y_center, args.xsize);
     } else {
-        mandelbrot_set_cuda.setXRange(args.xmin, args.xmax).setYRange(args.ymin, args.ymax);
+        mandelbrot_set_cuda.setXRange(args.x_min, args.x_max).setYRange(args.y_min, args.y_max);
     }
+
+    cout << "Resolution: " << mandelbrot_set_cuda.getWidth() << " x " << mandelbrot_set_cuda.getHeight() << endl;
+    cout << fixed << setprecision(2) // NOLINT
+         << "XRange: " << mandelbrot_set_cuda.getXMin() << " - " << mandelbrot_set_cuda.getXMax() << endl;
+    cout << fixed << setprecision(2) // NOLINT
+         << "YRange: " << mandelbrot_set_cuda.getYMin() << " - " << mandelbrot_set_cuda.getYMax() << endl;
 
     start = std::chrono::steady_clock::now();
     const auto image_cuda = mandelbrot_set_cuda.generate();
@@ -141,6 +151,8 @@ int main(int argc, char **argv) {
     std::cout << "Time taken to generate the image using CUDA: " << diff.count() << " seconds" << std::endl;
 
     imwrite("MandelbrotSetCuda.png", image_cuda);
+#endif
+
 #endif
 
     return 0;
