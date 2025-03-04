@@ -50,6 +50,17 @@ namespace Mandelbrot {
         Derived &setYRange(double y_min, double y_max) { return setYMin(y_min).setYMax(y_max); }
         Derived &setResolution(size_t width, size_t height) { return setWidth(width).setHeight(height); }
 
+        // xsize is the width of the image in the complex plane, the height is calculated based on the aspect ratio
+        Derived &setCenter(double x_center, double y_center, double xsize) {
+            auto &self = static_cast<Derived &>(*this);
+            auto ysize = xsize * self.height_ / self.width_;
+            self.x_min_ = x_center - xsize / 2;
+            self.x_max_ = x_center + xsize / 2;
+            self.y_min_ = y_center - ysize / 2;
+            self.y_max_ = y_center + ysize / 2;
+            return self;
+        }
+
         [[nodiscard]] cv::Mat generate() const { return static_cast<const Derived *>(this)->generateImpl(); }
 
 
