@@ -16,6 +16,9 @@
     } while (0)
 
 namespace Mandelbrot {
+    constexpr bool USE_EXTENDED_DOUBLE = true;
+    using ComputeDouble = std::conditional_t<USE_EXTENDED_DOUBLE, ExtendedDouble, double>;
+
     constexpr auto MAX_ITERATIONS = MandelbrotSetCuda::MAX_ITERATIONS;
 
     __constant__ static uchar3 colors[MAX_ITERATIONS + 1];
@@ -53,19 +56,19 @@ namespace Mandelbrot {
         if (x >= width || y >= height) {
             return;
         }
-        const double cr = x_min + (x_max - x_min) * x / width;
-        const double ci = y_min + (y_max - y_min) * y / height;
+        const ComputeDouble cr{x_min + (x_max - x_min) * x / width};
+        const ComputeDouble ci{y_min + (y_max - y_min) * y / height};
 
-        double zr = 0.0, zi = 0.0;
+        ComputeDouble zr{0.0}, zi{0.0};
         int n = 0;
         while (n < MAX_ITERATIONS) {
-            const double zr2 = zr * zr;
-            const double zi2 = zi * zi;
+            const ComputeDouble zr2 = zr * zr;
+            const ComputeDouble zi2 = zi * zi;
             if (zr2 + zi2 > ESCAPE_RADIUS_SQ)
                 break;
 
-            const double zr_temp = zr2 - zi2 + cr;
-            zi = 2 * zr * zi + ci;
+            const ComputeDouble zr_temp = zr2 - zi2 + cr;
+            zi = zr * zi * 2 + ci;
             zr = zr_temp;
             ++n;
         }

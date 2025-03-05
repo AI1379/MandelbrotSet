@@ -134,8 +134,8 @@ int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     // Some constants for the zooming animation. We may make them configurable later.
-    constexpr int MAX_STEP = 10;
-    constexpr double ZOOM_FACTOR = 4.0;
+    constexpr int MAX_STEP = 40;
+    constexpr double ZOOM_FACTOR = 2.0;
     constexpr double SCALE_RATE = 1.03;
 
 

@@ -23,11 +23,6 @@ namespace Mandelbrot {
         MandelbrotSet() = default;
         MandelbrotSet(const size_t width, const size_t height) : BaseMandelbrotSet(width, height) {}
 
-#ifdef MANDELBROT_SET_TEST
-        // TODO: Add test helper.
-        friend class MandelbrotSetTest;
-#endif
-
     private:
         [[nodiscard]] cv::Mat generateImpl() const;
         [[nodiscard]] static size_t computeEscapeTime(const std::complex<double> &c);
