@@ -8,7 +8,7 @@
 
 namespace Mandelbrot {
     size_t MandelbrotSet::computeEscapeTime(const std::complex<double> &c) {
-        std::complex<double> z(0);
+        std::complex<double> z(0.0, 0.0);
         for (auto i = 0u; i < MAX_ITERATIONS; ++i) {
             z = z * z + c;
             if (std::norm(z) > ESCAPE_RADIUS * ESCAPE_RADIUS) {

@@ -15,7 +15,7 @@ namespace Mandelbrot {
         using Base = BaseMandelbrotSet<MandelbrotSet>;
 
     public:
-        friend class Base;
+        friend Base;
         constexpr static size_t MAX_ITERATIONS = 1000;
         constexpr static double ESCAPE_RADIUS = 2.0;
         constexpr static size_t COLOR_CYCLE = 50;

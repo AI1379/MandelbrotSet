@@ -1,4 +1,4 @@
-find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc videoio)
 
 if (ENABLE_OPENMP)
     find_package(OpenMP REQUIRED)
@@ -8,6 +8,14 @@ endif ()
 set(MANDELBROT_SET_LIBRARY_SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSet.cpp
 )
+
+if (ENABLE_MPFR)
+    find_package(MPFR REQUIRED)
+    list(APPEND MANDELBROT_SET_LIBRARY_SOURCE
+            ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSetMPFR.cpp)
+    message(STATUS "MPFR include dir: ${MPFR_INCLUDE_DIR}")
+    add_definitions(-DENABLE_MPFR)
+endif ()
 
 if (ENABLE_CUDA)
     list(APPEND MANDELBROT_SET_LIBRARY_SOURCE
@@ -32,6 +40,10 @@ endif ()
 
 target_include_directories(MandelbrotSetLibrary PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(MandelbrotSetLibrary PUBLIC ${OpenCV_LIBS})
+
+if (ENABLE_MPFR)
+    target_link_libraries(MandelbrotSetLibrary PUBLIC MPFR::MPFR)
+endif ()
 
 if (ENABLE_OPENMP AND OpenMP_CXX_FOUND)
     target_link_libraries(MandelbrotSetLibrary PUBLIC OpenMP::OpenMP_CXX)

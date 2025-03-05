@@ -12,6 +12,7 @@
 #include <opencv2/videoio.hpp>
 #include "mandelbrot/MandelbrotSet.h"
 #include "mandelbrot/MandelbrotSetCuda.h"
+#include "mandelbrot/MandelbrotSetMPFR.h"
 
 using namespace cv;
 using namespace std;
@@ -114,8 +115,23 @@ vector<Mat> precomputeScaleMatrices(const Point2f &center, double scale_rate, in
     return scale_matrices;
 }
 
+#if ENABLE_CUDA
+using DefaultMandelbrotSet = Mandelbrot::MandelbrotSetCuda;
+constexpr std::string_view CURRENT_IMPLEMENTATION = "CUDA";
+#elif ENABLE_MPFR
+using DefaultMandelbrotSet = Mandelbrot::MandelbrotSetMPFR;
+constexpr std::string_view CURRENT_IMPLEMENTATION = "MPFR";
+#else
+using DefaultMandelbrotSet = Mandelbrot::MandelbrotSet;
+constexpr std::string_view CURRENT_IMPLEMENTATION = "Pure CPU";
+#endif
+
 int main(int argc, char **argv) {
     setLogLevel(utils::logging::LogLevel::LOG_LEVEL_SILENT);
+
+    std::cout << "Current implementation: " << CURRENT_IMPLEMENTATION << std::endl;
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     // Some constants for the zooming animation. We may make them configurable later.
     constexpr int MAX_STEP = 10;
@@ -131,8 +147,8 @@ int main(int argc, char **argv) {
 
     const int frame_count = ceil(log(ZOOM_FACTOR) / log(SCALE_RATE));
 
-    Mandelbrot::MandelbrotSetCuda mandelbrot_set_cuda;
-    mandelbrot_set_cuda.setResolution(width, height);
+    DefaultMandelbrotSet mandelbrot_set;
+    mandelbrot_set.setResolution(width, height);
 
     VideoWriter writer;
     writer.open("MandelbrotSetCuda.mp4", VideoWriter::fourcc('h', 'v', 'c', 'l'), 30, Size(width, height), true);
@@ -150,10 +166,10 @@ int main(int argc, char **argv) {
 
     for (uint64_t i = 0, factor = (1 << i); i < MAX_STEP; ++i, factor *= ZOOM_FACTOR) {
 
-        mandelbrot_set_cuda.setCenter(xcenter, ycenter, 4.0 / factor);
+        mandelbrot_set.setCenter(xcenter, ycenter, 4.0 / factor);
 
         start = std::chrono::steady_clock::now();
-        const auto image = mandelbrot_set_cuda.generate();
+        const auto image = mandelbrot_set.generate();
         end = std::chrono::steady_clock::now();
         diff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
         std::cout << "Time taken to generate frame " << i + 1 << ": " << diff.count() << " seconds" << std::endl;
@@ -237,6 +253,11 @@ int main(int argc, char **argv) {
 #endif
 
 #endif
+
+    std::chrono::steady_clock::time_point finish = std::chrono::steady_clock::now();
+    auto total_time = std::chrono::duration_cast<std::chrono::duration<double>>(finish - begin);
+
+    std::cout << "Total time: " << total_time.count() << " seconds" << std::endl;
 
     return 0;
 }
