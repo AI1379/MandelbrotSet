@@ -17,4 +17,13 @@ message(STATUS "MPFR support: ${ENABLE_MPFR}")
 option(ENABLE_OPENMP "Enable OpenMP" ON)
 message(STATUS "OpenMP support: ${ENABLE_OPENMP}")
 
+option(ENABLE_STDEXEC "Enable STDEXEC" ON)
+message(STATUS "stdexec support: ${ENABLE_STDEXEC}")
+
+option(ENABLE_OPENCV "Enable OpenCV" ON)
+message(STATUS "OpenCV support: ${ENABLE_OPENCV}")
+
+option(ENABLE_EXT_DOUBLE "Enable Extended Double" OFF)
+message(STATUS "Extended Double support: ${ENABLE_EXT_DOUBLE}")
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)

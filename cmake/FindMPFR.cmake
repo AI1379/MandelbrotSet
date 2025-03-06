@@ -11,6 +11,7 @@
 find_path(MPFR_INCLUDE_DIR mpfr.h
         PATHS
         ENV MPFR_ROOT
+        ENV MPFR_DIR
         ENV MPFR_INCLUDE_DIR
         ${MPFR_ROOT}
         /usr
@@ -25,6 +26,7 @@ find_library(MPFR_LIBRARY
         mpfr
         PATHS
         ENV MPFR_ROOT
+        ENV MPFR_DIR
         ENV MPFR_LIB_DIR
         ${MPFR_ROOT}
         /usr

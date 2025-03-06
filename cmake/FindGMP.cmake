@@ -11,6 +11,7 @@
 find_path(GMP_INCLUDE_DIR gmp.h
         PATHS
         ENV GMP_ROOT
+        ENV GMP_DIR
         ENV GMP_INCLUDE_DIR
         ${GMP_ROOT}
         /usr
@@ -25,6 +26,7 @@ find_library(GMP_LIBRARY
         gmp
         PATHS
         ENV GMP_ROOT
+        ENV GMP_DIR
         ENV GMP_LIB_DIR
         ${GMP_ROOT}
         /usr
