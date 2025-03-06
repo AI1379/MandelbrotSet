@@ -45,6 +45,8 @@ See [Note](#note) for more information.
 
 ### Build with CMake
 
+Just like any CMake project. For example:
+
 ```shell 
 mkdir build
 cd build
@@ -68,9 +70,8 @@ It is recommended using `ninja` as the generator for better performance.
 - MPFR is used for arbitrary precision floating point number. It is optional and not recommended for normal usage. The
   performance is severely degraded.
 - A paper is written for this project in the `doc` directory.
-- Because this repository is published on
-  GitHub as well, the paper is written in English, with a Chinese version can be found
-  in [report-cn.tex](docs/report-cn.tex). For the same reason, the signature and school ID are removed from the paper.
+- Because this repository is published on GitHub as well, the paper is written in English, with a Chinese version
+  [report-cn.tex](docs/report-cn.tex). For the same reason, the signature and school ID are removed from the paper.
 
 ## Usage
 
