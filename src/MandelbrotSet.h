@@ -7,7 +7,7 @@
 
 #include <complex>
 #include <opencv2/core/mat.hpp>
-#include "mandelbrot/BaseMandelbrotSet.h"
+#include "BaseMandelbrotSet.h"
 
 namespace Mandelbrot {
 

@@ -2,9 +2,9 @@
 // Created by Renatus Madrigal on 3/2/2025.
 //
 
-#include "mandelbrot/MandelbrotSet.h"
+#include "MandelbrotSet.h"
 #include <opencv2/imgproc.hpp>
-#include "mandelbrot/BaseMandelbrotSet.h"
+#include "BaseMandelbrotSet.h"
 
 namespace Mandelbrot {
     size_t MandelbrotSet::computeEscapeTime(const std::complex<double> &c) {

@@ -10,9 +10,9 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
-#include "mandelbrot/MandelbrotSet.h"
-#include "mandelbrot/MandelbrotSetCuda.h"
-#include "mandelbrot/MandelbrotSetMPFR.h"
+#include "MandelbrotSet.h"
+#include "MandelbrotSetCuda.h"
+#include "MandelbrotSetMPFR.h"
 
 using namespace cv;
 using namespace std;

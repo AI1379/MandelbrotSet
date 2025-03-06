@@ -6,7 +6,7 @@
 #define MANDELBROTSET_INCLUDE_MANDELBROT_MANDELBROTSETCUDA_CUH
 
 #include <opencv2/core.hpp>
-#include "mandelbrot/BaseMandelbrotSet.h"
+#include "BaseMandelbrotSet.h"
 
 namespace Mandelbrot {
     class MandelbrotSetCuda : public BaseMandelbrotSet<MandelbrotSetCuda> {

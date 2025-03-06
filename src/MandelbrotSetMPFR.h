@@ -6,7 +6,7 @@
 #define MANDELBROTSET_INCLUDE_MANDELBROT_MANDELBROTSETMPFR_H
 
 #include <opencv2/core/mat.hpp>
-#include "mandelbrot/BaseMandelbrotSet.h"
+#include "BaseMandelbrotSet.h"
 
 namespace Mandelbrot {
 

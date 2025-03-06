@@ -7,6 +7,7 @@ endif ()
 
 set(MANDELBROT_SET_LIBRARY_SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSet.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
 )
 
 if (ENABLE_MPFR)
@@ -26,28 +27,24 @@ endif ()
 
 message(STATUS "Library sources: ${MANDELBROT_SET_LIBRARY_SOURCE}")
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
-add_library(MandelbrotSetLibrary ${MANDELBROT_SET_LIBRARY_SOURCE})
+add_executable(MandelbrotSet ${MANDELBROT_SET_LIBRARY_SOURCE})
 
 if (ENABLE_CUDA)
     # For Cuda. From https://github.com/robertmaynard/code-samples/blob/master/posts/cmake/CMakeLists.txt
-    target_compile_features(MandelbrotSetLibrary PUBLIC cxx_std_23)
-    set_target_properties(MandelbrotSetLibrary
+    target_compile_features(MandelbrotSet PUBLIC cxx_std_23)
+    set_target_properties(MandelbrotSet
             PROPERTIES CUDA_SEPARABLE_COMPILATION ON
     )
 endif ()
 
-target_include_directories(MandelbrotSetLibrary PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(MandelbrotSetLibrary PUBLIC ${OpenCV_LIBS})
+target_link_libraries(MandelbrotSet PUBLIC ${OpenCV_LIBS})
 
 if (ENABLE_MPFR)
-    target_link_libraries(MandelbrotSetLibrary PUBLIC MPFR::MPFR)
+    target_link_libraries(MandelbrotSet PUBLIC MPFR::MPFR)
 endif ()
 
 if (ENABLE_OPENMP AND OpenMP_CXX_FOUND)
-    target_link_libraries(MandelbrotSetLibrary PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(MandelbrotSet PUBLIC OpenMP::OpenMP_CXX)
 endif ()
-
-add_executable(MandelbrotSet ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-target_link_libraries(MandelbrotSet PUBLIC MandelbrotSetLibrary)

@@ -2,7 +2,7 @@
 // Created by Renatus Madrigal on 3/4/2025.
 //
 
-#include "mandelbrot/ExtendedDouble.cuh"
+#include "ExtendedDouble.cuh"
 
 namespace Mandelbrot {
 

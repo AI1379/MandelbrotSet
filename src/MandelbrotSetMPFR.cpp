@@ -2,13 +2,12 @@
 // Created by Renatus Madrigal on 3/5/2025.
 //
 
-#include "mandelbrot/MandelbrotSetMPFR.h"
-
+#include "MandelbrotSetMPFR.h"
 #include <iostream>
 #include <mpfr.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
-#include "mandelbrot/MPFRPool.h"
+#include "MPFRPool.h"
 
 namespace Mandelbrot {
     constexpr auto PRECISION = 256;
