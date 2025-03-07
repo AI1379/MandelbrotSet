@@ -6,10 +6,75 @@
 
 % Packages
 \usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+\newtheorem{definition}{Definition}
+\newtheorem{property}{Property}
+
+\title{A report on the Mandelbrot set}
+\author{Renatus Madrigal}
+\date{\today}
 
 % Document
 \begin{document}
 
+    \maketitle
 
 
+    \section{Abstract}\label{sec:abstract}
+    % TODO: Write abstract
+
+
+    \section{Introduction}\label{sec:introduction}
+
+    The Mandelbrot set constitutes a fractal structure characterized by an elegant mathematical definition that belies
+    its extraordinary complexity.
+    This project aims to explore the Mandelbrot set and its properties, as well as to provide a visual representation of
+    the set using C++.
+    This report will detail the algorithms and optimizations used to generate the Mandelbrot set.
+
+
+    \section{Background}\label{sec:background}
+
+    \begin{definition}
+        Let $f_c(z) = z^2 + c$, where $z, c \in \mathbb{C}$.
+        Sequence $\{z_n\}$ is defined by $z_0 = 0$ and $z_{n+1} = f_c(z_n)$.
+        The \textbf{Mandelbrot set} $M$ is defined as follows:
+        \begin{equation}
+            M = \{c \in \mathbb{C} : \lim_{n \to \infty} |z_n| < \infty\}\label{eq:mandelbrot_set_define}
+        \end{equation}
+    \end{definition}
+
+    It can be proved\textsuperscript{\cite{branner1989mandelbrot}} that the Mandelbrot set has this property:
+
+    \begin{property}
+        \label{prop:bounded}
+        Let $c \in M$.
+        Then, $|z_n| \leq 2$ for all $n$.
+    \end{property}
+
+    Thus, we can define the \textbf{layer function}:
+
+    \begin{definition}
+        Let $f_c(z) = z^2 + c$.
+        The \textbf{layer function} $L_c(n)$ is defined as follows:
+        \begin{equation}
+            L(c) = \min\{n : z_n > 2\}\label{eq:layer_function}
+        \end{equation}
+    \end{definition}
+
+    This function measures the escape \quote speed \quote of the sequence $\{z_n\}$.
+    Then, we can define the \textbf{layer set} as follows:
+
+    \begin{definition}
+        \begin{equation}
+            L_n = \{c \in \mathbb{C} : L(c) = n \} \label{eq:layer_set}
+        \end{equation}
+    \end{definition}
+
+    We assert that for all $n$, $L_n$ is a connected set.
+
+    \bibliography{references}
+    \bibliographystyle{plain}
 \end{document}
