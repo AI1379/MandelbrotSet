@@ -5,6 +5,19 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # Do nothing for now
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # Do nothing for now
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/Zc:preprocessor>")
+else ()
+    message(FATAL_ERROR "Unsupported compiler!")
+endif ()
+
+message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+
 option(ENABLE_CUDA "Enable CUDA" ON)
 message(STATUS "CUDA support: ${ENABLE_CUDA}")
 if (ENABLE_CUDA)
