@@ -10,7 +10,6 @@
 #include <exec/static_thread_pool.hpp>
 
 namespace Mandelbrot {
-
     class SyncImageWriter {
     public:
         void write(cv::Mat &&image, const std::string &filename);
@@ -19,6 +18,7 @@ namespace Mandelbrot {
     class AsyncImageWriter {
     public:
         void write(cv::Mat &&image, const std::string &filename);
+
     private:
         exec::static_thread_pool thread_pool_;
     };
@@ -28,7 +28,6 @@ namespace Mandelbrot {
 #else
     using ImageWriter = SyncImageWriter;
 #endif
-
 } // namespace Mandelbrot
 
 #endif // MANDELBROTSET_SRC_IMAGEWRITER_H

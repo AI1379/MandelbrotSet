@@ -7,6 +7,14 @@ if (NOT TARGET STDEXEC::stdexec)
         unset(STDEXEC_ROOT CACHE)
     endif ()
 
+    if (STDEXEC_DIR AND NOT STDEXEC_DIR)
+        set(STDEXEC_ROOT
+                ${STDEXEC_DIR}
+                CACHE PATH "stdexec base directory"
+        )
+        unset(STDEXEC_DIR CACHE)
+    endif ()
+
     find_path(STDEXEC_SOURCE_DIR include/stdexec/execution.hpp
             HINTS ${STDEXEC_ROOT}
             PATHS

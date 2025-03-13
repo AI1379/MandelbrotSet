@@ -61,6 +61,15 @@ namespace Mandelbrot {
             return self;
         }
 
+        Derived &setCenter(double x_center, double y_center, double xsize, double ysize) {
+            auto &self = static_cast<Derived &>(*this);
+            self.x_min_ = x_center - xsize / 2;
+            self.x_max_ = x_center + xsize / 2;
+            self.y_min_ = y_center - ysize / 2;
+            self.y_max_ = y_center + ysize / 2;
+            return self;
+        }
+
         [[nodiscard]] cv::Mat generate() const { return static_cast<const Derived *>(this)->generateImpl(); }
 
 
