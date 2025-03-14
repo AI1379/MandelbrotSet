@@ -15,6 +15,7 @@ If you like this project, please give me a star. Thanks! :smile:
 - [ ] Better commandline interface
 - [ ] BMP output without third-party library
 - [ ] Benchmark
+- [ ] CI/CD on GitHub using GitHub actions.
 
 ## Build
 
@@ -62,7 +63,7 @@ It is recommended using `ninja` as the generator for better performance.
   OpenCV.
 - CUDA is recommended for GPU acceleration.
 - `ExtendedDouble` is a custom implementation of arbitrary precision floating point number. More details can be found
-  in [report.tex](docs/report.tex).
+  in [report.tex](doc/report.tex).
 - `stdexec` is a C++ library for asynchronous execution as part of C++23. However, it is not yet supported by most
   compilers. Thus, the implementation by NVIDIA is used.
 - OpenMP is used for parallelization. It is recommended to enable it for better performance. Most of the modern C++
@@ -71,7 +72,7 @@ It is recommended using `ninja` as the generator for better performance.
   performance is severely degraded.
 - A paper is written for this project in the `doc` directory.
 - Because this repository is published on GitHub as well, the paper is written in English, with a Chinese version
-  [report-cn.tex](docs/report-cn.tex). For the same reason, the signature and school ID are removed from the paper.
+  [report-cn.tex](doc/report-cn.tex). For the same reason, the signature and school ID are removed from the paper.
 
 ## Usage
 
