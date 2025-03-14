@@ -5,6 +5,8 @@
 #ifndef MANDELBROTSET_INCLUDE_MANDELBROT_BASEMANDELBROTSET_H
 #define MANDELBROTSET_INCLUDE_MANDELBROT_BASEMANDELBROTSET_H
 
+#include <opencv2/core.hpp>
+
 namespace Mandelbrot {
     template<typename Derived>
     class BaseMandelbrotSet {

@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <exec/async_scope.hpp>
 #include <exec/inline_scheduler.hpp>
+#include <exec/scope.hpp>
 #include <exec/static_thread_pool.hpp>
 #include <exec/task.hpp>
 #include <iostream>
@@ -15,6 +16,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 #include <queue>
+#include <ranges>
 #include <thread>
 #include "MandelbrotSet.h"
 #include "MandelbrotSetCuda.h"
@@ -303,9 +305,21 @@ struct AsyncChannel {
                    }
                });
     }
+    bool empty() const { return queue.empty(); }
 
 private:
     std::queue<T> queue;
+};
+
+// Unfortunately exec::scope_guard is not working as expected. We need to implement our own.
+struct ScopeGuard {
+    explicit ScopeGuard(std::function<void()> func) : func(std::move(func)) {}
+    ~ScopeGuard() { func(); }
+    ScopeGuard(const ScopeGuard &) = delete;
+    ScopeGuard &operator=(const ScopeGuard &) = delete;
+
+private:
+    std::function<void()> func;
 };
 
 #define CURRENT_TIME                                                                                                   \
@@ -329,6 +343,7 @@ void asyncGenerateVideo(const CommandLineArguments &args) {
     const double xsize = args.xsize, ysize = args.ysize;
 
     auto filename = args.set_output ? args.output : "MandelbrotSet.mp4";
+    constexpr auto FRAME_BASENAME = "frames/MandelbrotSetKeyFrame{}.png";
 
     cout << "Generating video..." << endl;
     cout << "Resolution: " << width << " x " << height << endl;
@@ -338,6 +353,13 @@ void asyncGenerateVideo(const CommandLineArguments &args) {
     cout << fixed << setprecision(2);
     cout << "Zoom factor: " << zoom_factor << endl;
     cout << "Scale rate: " << scale_rate << endl;
+
+    const int frame_count = ceil(log(zoom_factor) / log(scale_rate));
+
+    DefaultMandelbrotSet mandelbrot_set;
+    mandelbrot_set.setResolution(width, height);
+
+    Point2f center(width / 2.0, height / 2.0);
 
     constexpr size_t worker_count = 4;
     size_t current_step = 0;
@@ -352,35 +374,47 @@ void asyncGenerateVideo(const CommandLineArguments &args) {
 
     cout << "Main thread: " << this_thread::get_id() << endl;
 
+    auto scale_matrices = precomputeScaleMatrices(center, scale_rate, frame_count);
+
     auto start = std::chrono::steady_clock::now();
 
     // TODO: Currently we use sleep_for to simulate the generation flow.
 
-    auto keyframeGenerator = [&](int step) {
+    auto keyframeGenerator = [&](int step, double factor) {
         std::println(cout, "Generating keyframe {} on thread {} at {}s", step, this_thread::get_id(), CURRENT_TIME);
-        // Pretend to generate keyframes
-        std::this_thread::sleep_for(2s);
+        mandelbrot_set.setCenter(xcenter, ycenter, xsize / factor, ysize / factor);
+        auto res = mandelbrot_set.generate();
         std::println(cout, "Keyframes generated on thread {} at {}s", this_thread::get_id(), CURRENT_TIME);
-        // Call constructor of RAIITracker to track the memory usage
-        return RAIITracker{};
+        return res;
     };
 
-    auto imgWriter = [&](auto &&) {
+    auto imgWriter = [&](auto &&arg) {
         std::println(cout, "Writing image on thread {} at {}s", this_thread::get_id(), CURRENT_TIME);
-        std::this_thread::sleep_for(1.5s);
-        std::println(cout, "Image written on thread {} at {}s", this_thread::get_id(), CURRENT_TIME);
+
+        auto &[image, step] = arg;
+        auto filename = std::format(FRAME_BASENAME, step + 1);
+        imwrite(filename, image);
+
+        std::println(cout, "Image {} written on thread {} at {}s", filename, this_thread::get_id(), CURRENT_TIME);
     };
 
-    AsyncChannel<RAIITracker> channel;
+    AsyncChannel<cv::Mat> channel;
+    bool done = false;
 
     auto videoGenerator = [&]() -> exec::task<void> { // NOLINT(*-static-accessed-through-instance)
-        while (true) {
+        std::vector<cv::Mat> frames(frame_count);
+        VideoWriter writer;
+        ScopeGuard guard{[&]() { writer.release(); }};
+        writer.open(filename, VideoWriter::fourcc('h', 'v', 'c', 'l'), 30, Size(width, height), true);
+        while (!done || !channel.empty()) {
             auto value = co_await channel.receive();
             if (value) {
-                std::println(cout, "Received value {} on thread {} at {}s", value->id, this_thread::get_id(),
-                             CURRENT_TIME);
-                // Pretend Video generation
-                this_thread::sleep_for(1s);
+                for (int i = 0; i < frame_count; ++i) {
+                    warpAffine(value.value(), frames[i], scale_matrices[i], Size(width, height));
+                }
+                for (auto &frame: frames) {
+                    writer.write(frame);
+                }
                 std::println(cout, "Video generated on thread {} at {}s", this_thread::get_id(), CURRENT_TIME);
                 co_await ex::just();
             } else {
@@ -391,13 +425,30 @@ void asyncGenerateVideo(const CommandLineArguments &args) {
 
     scope.spawn(ex::starts_on(sched, videoGenerator()));
 
-    for (auto step: views::iota(0, max_step)) {
-        auto res = keyframeGenerator(step);
+    // Generate the steps for keyframe generation.
+    // It can be easily done by using traditional for loop, but I want to use ranges.
+    // Just for fun.
+    // clang-format off
+    auto steps = views::zip( 
+        views::iota(0, max_step),
+        views::iota(0, max_step)
+        | views::transform([zoom_factor, factor = 1.0](auto) mutable {
+            auto res = factor;
+            factor *= zoom_factor;
+            return res;
+        })
+    );
+    // clang-format on
+
+    for (auto [step, factor]: steps) {
+        auto res = keyframeGenerator(step, factor);
         channel.send(res);
-        scope.spawn(ex::starts_on(io_pool.get_scheduler(), ex::just(std::move(res)) | ex::then(imgWriter)));
+        scope.spawn(ex::starts_on(io_pool.get_scheduler(),
+                                  ex::just(std::make_pair(std::move(res), step)) | ex::then(imgWriter)));
     }
 
-    scope.request_stop();
+    done = true;
+
 
     ex::sync_wait(scope.on_empty());
 
@@ -444,9 +495,10 @@ int main(int argc, char **argv) {
     auto total_time = std::chrono::duration_cast<std::chrono::duration<double>>(finish - begin);
 
     cout << "Total time: " << total_time.count() << " seconds" << endl;
-#endif
+#else
 
     asyncGenerateVideo(args);
 
+#endif
     return 0;
 }
