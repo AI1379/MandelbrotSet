@@ -1,7 +1,7 @@
 CPMAddPackage(
         NAME OpenCV
         GITHUB_REPOSITORY opencv/opencv
-        VERSION 4.11.0
+        GIT_TAG 4.11.0
         OPTIONS
         "BUILD_SHARED_LIBS OFF" "BUILD_TESTS OFF" "BUILD_PERF_TESTS OFF" "BUILD_EXAMPLES OFF" "BUILD_LIST imgproc,core,videoio"
 )
