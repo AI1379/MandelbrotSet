@@ -5,50 +5,61 @@
 #ifndef MANDELBROTSET_SRC_UTILITY_H
 #define MANDELBROTSET_SRC_UTILITY_H
 
-#if 0
-
+#include <chrono>
 #include <queue>
+#include <ranges>
 #include <stdexec/concepts.hpp>
 #include <stdexec/coroutine.hpp>
 #include <stdexec/execution.hpp>
 
 namespace ex = stdexec;
 
+#define TIME_DIFF(start)                                                                                               \
+    (std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - (start)).count())
+
 namespace Mandelbrot {
+
     template<typename T>
-    class AsyncChannel {
-    public:
-        AsyncChannel(ex::scheduler auto from, ex::scheduler auto to) :
-            from_(std::move(from)), to_(std::move(to)), queue_{} {}
-
-        ex::sender auto async_send(T value) {
-            return ex::just(std::move(value)) // NOLINT
-                   | ex::continues_on(from_) // NOLINT
-                   | ex::then([this](T val) { queue_.push(std::move(val)); });
+    struct AsyncChannel {
+        template<typename... Args>
+        void send(Args... args) {
+            std::lock_guard lock(mutex);
+            queue.emplace(std::forward<T>(args)...);
         }
 
-        ex::sender auto async_receive() {
-            return ex::just() // NOLINT
-                   | ex::continues_on(to_) // NOLINT
-                   | ex::let_value([this]() {
-                         if (queue_.empty()) {
-                             return ex::just();
-                         } else {
-                             T val = queue_.front();
-                             queue_.pop();
-                             return ex::just(std::move(val));
-                         }
-                     });
+        ex::sender auto receive() {
+            return ex::just() | ex::then([this]() -> std::optional<T> {
+                       if (queue.empty()) {
+                           return std::nullopt;
+                       } else {
+                           T val = queue.front();
+                           queue.pop();
+                           return val;
+                       }
+                   });
         }
+
+        bool empty() const { return queue.empty(); }
 
     private:
-        std::queue<T> queue_{};
-        ex::scheduler auto from_{};
-        ex::scheduler auto to_{};
+        std::mutex mutex;
+        std::queue<T> queue;
     };
+
+    // Unfortunately exec::scope_guard is not working as expected. We need to implement our own.
+    struct ScopeGuard {
+        explicit ScopeGuard(std::function<void()> func) : func(std::move(func)) {}
+        ~ScopeGuard() { func(); }
+        ScopeGuard(const ScopeGuard &) = delete;
+        ScopeGuard &operator=(const ScopeGuard &) = delete;
+
+    private:
+        std::function<void()> func;
+    };
+
+    namespace views = std::views;
 
 } // namespace Mandelbrot
 
-#endif
 
 #endif // MANDELBROTSET_SRC_UTILITY_H
