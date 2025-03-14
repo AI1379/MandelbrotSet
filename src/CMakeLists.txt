@@ -1,4 +1,10 @@
-find_package(OpenCV REQUIRED COMPONENTS core imgproc videoio)
+CPMAddPackage(
+        NAME OpenCV
+        GITHUB_REPOSITORY opencv/opencv
+        VERSION 4.11.0
+        OPTIONS
+        "BUILD_SHARED_LIBS OFF" "BUILD_TESTS OFF" "BUILD_PERF_TESTS OFF" "BUILD_EXAMPLES OFF" "BUILD_LIST imgproc,core,videoio"
+)
 
 set(MANDELBROT_SET_SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSet.cpp
@@ -7,7 +13,9 @@ set(MANDELBROT_SET_SOURCE
 )
 
 set(MANDELBROT_SET_DEPENDENCIES
-        ${OpenCV_LIBS}
+        opencv_core
+        opencv_imgproc
+        opencv_videoio
 )
 
 if (ENABLE_OPENMP)
@@ -33,7 +41,11 @@ if (ENABLE_CUDA)
 endif ()
 
 if (ENABLE_STDEXEC)
-    find_package(STDEXEC REQUIRED)
+    CPMAddPackage(
+            NAME STDEXEC
+            GITHUB_REPOSITORY NVIDIA/stdexec
+            GIT_TAG main
+    )
     add_definitions(-DENABLE_STDEXEC)
     list(APPEND MANDELBROT_SET_DEPENDENCIES STDEXEC::stdexec)
 endif ()
