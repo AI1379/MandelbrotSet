@@ -10,7 +10,7 @@ If you like this project, please give me a star. Thanks! :smile:
 
 - [ ] Add more color schemes
 - [ ] Algorithm to auto detect infinite area
-- [ ] Asynchronous I/O for image saving and video generation
+- [x] Asynchronous I/O for image saving and video generation
 - [ ] CPM for package management
 - [ ] Better commandline interface
 - [ ] BMP output without third-party library

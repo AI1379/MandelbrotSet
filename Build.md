@@ -6,9 +6,9 @@ As mentioned in the [README](README.md), you need to have the following installe
 
 - CMake
 - C++ compiler with C++20 support, for example:
-    - clang 13+
-    - gcc 11+
-    - MSVC 19.29+
+  - clang 13+
+  - gcc 11+
+  - MSVC 19.29+
 - Ninja (optional, but recommended)
 - CUDA (optional, but recommended)
 
@@ -39,6 +39,8 @@ Here are some environment variables that you need to define to find third-party 
 | `OpenCV_DIR`  | Directory that contains `OpenCVConfig.cmake` |
 | `STDEXEC_DIR` | Path to the root of `stdexec`                |
 | `MPFR_DIR`    | Directory that contains `include/mpfr.h`     |
+
+You can also pass these variable by CMake build arguments.
 
 ## Build with CMake
 
