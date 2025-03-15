@@ -1,10 +1,13 @@
-CPMAddPackage(
-        NAME OpenCV
-        GITHUB_REPOSITORY opencv/opencv
-        GIT_TAG 4.11.0
-        OPTIONS
-        "BUILD_SHARED_LIBS OFF" "BUILD_TESTS OFF" "BUILD_PERF_TESTS OFF" "BUILD_EXAMPLES OFF" "BUILD_LIST imgproc,core,videoio"
-)
+# It would be better to use local OpenCV installation because it is a large package.
+#CPMAddPackage(
+#        NAME OpenCV
+#        GITHUB_REPOSITORY opencv/opencv
+#        GIT_TAG 4.11.0
+#        OPTIONS
+#        "BUILD_SHARED_LIBS OFF" "BUILD_TESTS OFF" "BUILD_PERF_TESTS OFF" "BUILD_EXAMPLES OFF" "BUILD_LIST imgproc,core,videoio"
+#)
+# Unfortunately OpenCV does not support add_directory() so we have to use find_package().
+find_package(OpenCV REQUIRED)
 
 set(MANDELBROT_SET_SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSet.cpp
@@ -19,18 +22,32 @@ set(MANDELBROT_SET_DEPENDENCIES
 )
 
 if (ENABLE_OPENMP)
-    find_package(OpenMP REQUIRED)
-    add_definitions(-DENABLE_OPENMP)
-    list(APPEND MANDELBROT_SET_DEPENDENCIES OpenMP::OpenMP_CXX)
+    find_package(OpenMP)
+    if (OpenMP_CXX_FOUND)
+        add_definitions(-DENABLE_OPENMP)
+        list(APPEND MANDELBROT_SET_DEPENDENCIES OpenMP::OpenMP_CXX)
+    elseif (AUTO_DISABLE_REQ)
+        message(STATUS "OpenMP is required but not supported by the compiler")
+        set(ENABLE_OPENMP OFF)
+    else ()
+        message(FATAL_ERROR "OpenMP is required but not supported by the compiler")
+    endif ()
 endif ()
 
 if (ENABLE_MPFR)
-    find_package(MPFR REQUIRED)
-    list(APPEND MANDELBROT_SET_SOURCE
-            ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSetMPFR.cpp)
-    message(STATUS "MPFR include dir: ${MPFR_INCLUDE_DIR}")
-    add_definitions(-DENABLE_MPFR)
-    list(APPEND MANDELBROT_SET_DEPENDENCIES MPFR::MPFR)
+    find_package(MPFR)
+    if (MPFR_FOUND)
+        list(APPEND MANDELBROT_SET_SOURCE
+                ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSetMPFR.cpp)
+        message(STATUS "MPFR include dir: ${MPFR_INCLUDE_DIR}")
+        add_definitions(-DENABLE_MPFR)
+        list(APPEND MANDELBROT_SET_DEPENDENCIES MPFR::MPFR)
+    elseif (AUTO_DISABLE_REQ)
+        message(STATUS "MPFR is required but not found")
+        set(ENABLE_MPFR OFF)
+    else ()
+        message(FATAL_ERROR "MPFR is required but not found")
+    endif ()
 endif ()
 
 if (ENABLE_CUDA)

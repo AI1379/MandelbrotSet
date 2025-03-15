@@ -55,6 +55,12 @@ jobs:
 
       - run: |
           echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"
+          nvcc -V
+
+      - uses: Dovyski/setup-opencv-action@v1.1
+        with:
+          opencv-version: '4.11.0'
+          CMAKE_CXX_COMPILER: ${{ matrix.cpp_compiler }}
 
       - name: Set reusable strings
         # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -71,6 +77,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DAUTO_DISABLE_REQ=ON
           -S ${{ github.workspace }}
 
       - name: Build

@@ -21,6 +21,8 @@ endif ()
 
 message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 
+option(AUTO_DISABLE_REQ "Automatically disable required features if not found" OFF)
+
 option(ENABLE_CUDA "Enable CUDA" ON)
 message(STATUS "CUDA support: ${ENABLE_CUDA}")
 if (ENABLE_CUDA)
