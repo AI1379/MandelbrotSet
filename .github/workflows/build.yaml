@@ -41,7 +41,7 @@ jobs:
             c_compiler: gcc
           - os: windows-latest
             c_compiler: clang
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             c_compiler: cl
 
     steps:
@@ -63,6 +63,7 @@ jobs:
       - uses: Dovyski/setup-opencv-action@v1.1
         with:
           opencv-version: '4.11.0'
+          opencv-extra-modules: false
           CMAKE_CXX_COMPILER: ${{ matrix.cpp_compiler }}
           CMAKE_BUILD_TYPE: ${{ matrix.build_type }}
           install-deps: false
@@ -79,6 +80,7 @@ jobs:
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -G Ninja
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
