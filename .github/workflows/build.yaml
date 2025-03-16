@@ -92,7 +92,7 @@ jobs:
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DAUTO_DISABLE_REQ=ON
-          -DOPENCV_DIR=${{ steps.setup-opencv.outputs.opencv_dir }}
+          -DOpenCV_DIR=${{ steps.setup-opencv.outputs.opencv_dir }}
           -S ${{ github.workspace }}
 
       - name: Build
