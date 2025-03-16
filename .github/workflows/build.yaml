@@ -63,6 +63,7 @@ jobs:
           git --version
 
       - uses: AI1379/setup-opencv-action@master
+        id: setup-opencv
         with:
           opencv-version: '4.11.0'
           opencv-extra-modules: false
@@ -88,6 +89,7 @@ jobs:
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DAUTO_DISABLE_REQ=ON
+          -DOPENCV_DIR=${{ steps.setup-opencv.outputs.opencv_dir }}
           -S ${{ github.workspace }}
 
       - name: Build
