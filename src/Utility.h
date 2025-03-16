@@ -6,7 +6,12 @@
 #define MANDELBROTSET_SRC_UTILITY_H
 
 #include <chrono>
+#if __cpp_lib_print >= 202207L
+#include <print>
+#else
 #include <fmt/core.h>
+#include <fmt/std.h>
+#endif
 #include <queue>
 #include <ranges>
 #include <stdexec/concepts.hpp>
@@ -60,7 +65,11 @@ namespace Mandelbrot {
 
     namespace views = std::views;
 
+#if __cpp_lib_print >= 202207L
+    using std::println;
+#else
     using fmt::println;
+#endif
 
 } // namespace Mandelbrot
 

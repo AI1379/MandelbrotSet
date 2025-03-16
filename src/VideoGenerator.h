@@ -8,7 +8,6 @@
 #include <exec/async_scope.hpp>
 #include <exec/static_thread_pool.hpp>
 #include <exec/task.hpp>
-#include <format>
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -30,8 +29,6 @@
  */
 
 namespace Mandelbrot {
-    using std::cout;
-
     class VideoGenerator {
     public:
         using PointType = cv::Point2d;
@@ -93,16 +90,16 @@ namespace Mandelbrot {
 
         // TODO: Make this asynchronous.
         void start() {
-            println(cout, "Generating video...");
-            println(cout, "Working threads: {}", worker_count_);
-            println(cout, "IO threads: {}", io_count_);
-            println(cout, "Resolution: {} x {}", mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight());
-            println(cout, "Center: {}, {}", center_.x, center_.y);
-            println(cout, "Initial size: {} x {}", xsize_, ysize_);
-            println(cout, "Max step: {}", max_step_);
-            println(cout, "Zoom factor: {}", zoom_factor_);
-            println(cout, "Scale rate: {}", scale_rate_);
-            println(cout, "Frame count: {}", frame_count_);
+            println(stdout, "Generating video...");
+            println(stdout, "Working threads: {}", worker_count_);
+            println(stdout, "IO threads: {}", io_count_);
+            println(stdout, "Resolution: {} x {}", mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight());
+            println(stdout, "Center: {}, {}", center_.x, center_.y);
+            println(stdout, "Initial size: {} x {}", xsize_, ysize_);
+            println(stdout, "Max step: {}", max_step_);
+            println(stdout, "Zoom factor: {}", zoom_factor_);
+            println(stdout, "Scale rate: {}", scale_rate_);
+            println(stdout, "Frame count: {}", frame_count_);
 
             // Start Timer
             start_ = std::chrono::steady_clock::now();
@@ -130,12 +127,12 @@ namespace Mandelbrot {
                     }));
 
             for (auto [step, factor]: steps) {
-                std::println(cout, "Generating keyframe {} on thread {} at {}s", step, std::this_thread::get_id(),
-                             TIME_DIFF(start_));
+                println(stdout, "Generating keyframe {} on thread {} at {}s", step, std::this_thread::get_id(),
+                        TIME_DIFF(start_));
                 mandelbrot_set.setCenter(center_.x, center_.y, xsize_ / factor, ysize_ / factor);
                 auto res = mandelbrot_set_.generate();
-                std::println(cout, "Keyframes generated on thread {} at {}s", std::this_thread::get_id(),
-                             TIME_DIFF(start_));
+                println(stdout, "Keyframes generated on thread {} at {}s", std::this_thread::get_id(),
+                        TIME_DIFF(start_));
                 channel_.send(res);
                 scope.spawn(ex::starts_on(io_pool_.get_scheduler(),
                                           ex::just(std::make_pair(std::move(res), step)) |
@@ -144,7 +141,7 @@ namespace Mandelbrot {
 
             done_.store(true);
             ex::sync_wait(scope.on_empty());
-            println(cout, "All work done on thread {} at {}s", std::this_thread::get_id(), TIME_DIFF(start_));
+            println(stdout, "All work done on thread {} at {}s", std::this_thread::get_id(), TIME_DIFF(start_));
         }
 
     private:
@@ -175,7 +172,8 @@ namespace Mandelbrot {
                     for (auto &frame: frames_) {
                         writer.write(frame);
                     }
-                    println(cout, "Video generated on thread {} at {}s", std::this_thread::get_id(), TIME_DIFF(start_));
+                    println(stdout, "Video generated on thread {} at {}s", std::this_thread::get_id(),
+                            TIME_DIFF(start_));
                     co_await ex::just();
                 } else {
                     co_await ex::just();
@@ -184,13 +182,13 @@ namespace Mandelbrot {
         }
 
         void imageWrite(std::pair<cv::Mat, int> &&arg) {
-            println(cout, "Writing image on thread {} at {}s", std::this_thread::get_id(), TIME_DIFF(start_));
+            println(stdout, "Writing image on thread {} at {}s", std::this_thread::get_id(), TIME_DIFF(start_));
 
             auto &[image, step] = arg;
             auto filename = std::format(frame_basename_, step + 1);
             cv::imwrite(filename, image);
 
-            println(cout, "Image {} written on thread {} at {}s", filename, std::this_thread::get_id(),
+            println(stdout, "Image {} written on thread {} at {}s", filename, std::this_thread::get_id(),
                     TIME_DIFF(start_));
         };
 
