@@ -5,11 +5,6 @@
 #include <cassert>
 #include <chrono>
 #include <cstdlib>
-#include <exec/async_scope.hpp>
-#include <exec/inline_scheduler.hpp>
-#include <exec/scope.hpp>
-#include <exec/static_thread_pool.hpp>
-#include <exec/task.hpp>
 #include <iostream>
 #include <opencv2/core/utils/logger.hpp>
 #include <opencv2/imgcodecs.hpp>

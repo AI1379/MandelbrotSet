@@ -6,6 +6,7 @@
 #define MANDELBROTSET_SRC_UTILITY_H
 
 #include <chrono>
+#include <fmt/core.h>
 #include <queue>
 #include <ranges>
 #include <stdexec/concepts.hpp>
@@ -58,6 +59,8 @@ namespace Mandelbrot {
     };
 
     namespace views = std::views;
+
+    using fmt::println;
 
 } // namespace Mandelbrot
 

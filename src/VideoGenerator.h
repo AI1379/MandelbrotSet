@@ -31,7 +31,6 @@
 
 namespace Mandelbrot {
     using std::cout;
-    using std::println;
 
     class VideoGenerator {
     public:

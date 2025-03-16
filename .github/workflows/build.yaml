@@ -47,6 +47,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: seanmiddleditch/gha-setup-ninja@master
+
       - uses: Jimver/cuda-toolkit@v0.2.22
         id: cuda-toolkit
         with:
@@ -60,13 +62,14 @@ jobs:
           cmake --version
           git --version
 
-      - uses: Dovyski/setup-opencv-action@v1.1
+      - uses: AI1379/setup-opencv-action@master
         with:
           opencv-version: '4.11.0'
           opencv-extra-modules: false
           CMAKE_CXX_COMPILER: ${{ matrix.cpp_compiler }}
           CMAKE_BUILD_TYPE: ${{ matrix.build_type }}
           install-deps: false
+          BUILD_LIST: 'imgproc,core,videoio'
 
       - name: Set reusable strings
         # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -90,4 +93,11 @@ jobs:
       - name: Build
         # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+      - name: Upload artifact
+        # Upload the build output as an artifact. You can download the artifact in the Actions tab on GitHub.
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.c_compiler }}
+          path: ${{ steps.strings.outputs.build-output-dir }}
 

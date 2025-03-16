@@ -9,6 +9,12 @@
 # Unfortunately OpenCV does not support add_directory() so we have to use find_package().
 find_package(OpenCV REQUIRED)
 
+CPMAddPackage(
+        NAME fmt
+        GITHUB_REPOSITORY fmtlib/fmt
+        GIT_TAG 11.1.4
+)
+
 set(MANDELBROT_SET_SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSet.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/VideoGenerator.cpp
@@ -19,6 +25,7 @@ set(MANDELBROT_SET_DEPENDENCIES
         opencv_core
         opencv_imgproc
         opencv_videoio
+        fmt::fmt
 )
 
 if (ENABLE_OPENMP)
