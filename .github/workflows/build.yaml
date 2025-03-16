@@ -53,7 +53,7 @@ jobs:
         id: cuda-toolkit
         with:
           method: 'network'
-          sub-packages: '["nvcc"]'
+          sub-packages: '["nvcc", "cudart"]'
 
       - uses: ilammy/msvc-dev-cmd@v1
         name: Update MSVC environment
