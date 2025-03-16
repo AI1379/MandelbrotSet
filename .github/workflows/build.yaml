@@ -64,8 +64,6 @@ jobs:
           ninja --version
           cmake --version
           git --version
-          ${{ matrix.c_compiler }} --version
-          ${{ matrix.cpp_compiler }} --version
 
       - uses: AI1379/setup-opencv-action@master
         id: setup-opencv
