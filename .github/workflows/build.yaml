@@ -55,12 +55,17 @@ jobs:
           method: 'network'
           sub-packages: '["nvcc"]'
 
+      - uses: ilammy/msvc-dev-cmd@v1
+        name: Update MSVC environment
+
       - run: |
           echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"
           nvcc -V
           ninja --version
           cmake --version
           git --version
+          ${{ matrix.c_compiler }} --version
+          ${{ matrix.cpp_compiler }} --version
 
       - uses: AI1379/setup-opencv-action@master
         id: setup-opencv
