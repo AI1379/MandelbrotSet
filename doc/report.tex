@@ -8,6 +8,7 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage[ruled,vlined]{algorithm2e}
 
 \newtheorem{definition}{Definition}
 \newtheorem{property}{Property}
@@ -64,7 +65,7 @@
         \end{equation}
     \end{definition}
 
-    This function measures the escape \quote speed \quote of the sequence $\{z_n\}$.
+    This function measures the escape speed of the sequence $\{z_n\}$.
     Then, we can define the \textbf{layer set} as follows:
 
     \begin{definition}
@@ -74,6 +75,36 @@
     \end{definition}
 
     We assert that for all $n$, $L_n$ is a connected set.
+    With these definitions and properties, we can generate the image of the Mandelbrot set and explore its properties.
+
+
+    \section{Algorithms}\label{sec:algorithms}
+
+    To generate the Mandelbrot set, we use the \textbf{Escape Time Algorithm}.
+
+    \begin{algorithm}[H]
+        \SetAlgoLined
+        \caption{Escape Time Algorithm}
+        \label{alg:escape_time_algorithm}
+        \KwData{Complex number $c$, maximum number of iterations $N$}
+        \KwResult{Number of iterations $n$}
+        z = 0\;
+        \While{$|z| \leq 2$ and $n < N$}{
+            $z \leftarrow z^2 + c$\;
+            $n \leftarrow n + 1$\;
+        }
+        \Return $n$\;
+    \end{algorithm}
+
+    The maximum number of iterations $N$ is usually set to 1000.
+    We will use this algorithm to generate the Mandelbrot set.
+
+
+    \section{Optimizations}\label{sec:optimizations}
+
+
+
+
 
     \bibliography{references}
     \bibliographystyle{plain}
