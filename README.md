@@ -11,11 +11,11 @@ If you like this project, please give me a star. Thanks! :smile:
 - [ ] Add more color schemes
 - [ ] Algorithm to auto detect infinite area
 - [x] Asynchronous I/O for image saving and video generation
-- [ ] CPM for package management
+- [x] CPM for package management
 - [ ] Better commandline interface
 - [ ] BMP output without third-party library
 - [ ] Benchmark
-- [ ] CI/CD on GitHub using GitHub actions.
+- [x] CI/CD on GitHub using GitHub actions.
 
 ## Build
 
