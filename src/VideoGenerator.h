@@ -16,6 +16,7 @@
 #include <ranges>
 #include <stdexec/coroutine.hpp>
 #include <stdexec/execution.hpp>
+#include "MandelbrotSet.h"
 #include "MandelbrotSetCuda.h"
 #include "Utility.h"
 
@@ -111,8 +112,6 @@ namespace Mandelbrot {
             exec::async_scope scope;
             auto sched = compute_pool_.get_scheduler();
 
-            MandelbrotSetImpl mandelbrot_set;
-
             scope.spawn(ex::starts_on(sched, interpolateFrames()));
 
             // Generate the steps for keyframe generation.
@@ -129,7 +128,7 @@ namespace Mandelbrot {
             for (auto [step, factor]: steps) {
                 println(stdout, "Generating keyframe {} on thread {} at {}s", step, std::this_thread::get_id(),
                         TIME_DIFF(start_));
-                mandelbrot_set.setCenter(center_.x, center_.y, xsize_ / factor, ysize_ / factor);
+                mandelbrot_set_.setCenter(center_.x, center_.y, xsize_ / factor, ysize_ / factor);
                 auto res = mandelbrot_set_.generate();
                 println(stdout, "Keyframes generated on thread {} at {}s", std::this_thread::get_id(),
                         TIME_DIFF(start_));
