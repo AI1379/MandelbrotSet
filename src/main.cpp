@@ -306,16 +306,35 @@ int main(int argc, char **argv) {
 
     cout << "Current implementation: " << CURRENT_IMPLEMENTATION << endl;
 
+#if 0
     if (args.video) {
         asyncGenerateVideo(args);
     } else {
         generateImage(args);
     }
+#else
 
-    std::chrono::steady_clock::time_point finish = std::chrono::steady_clock::now();
-    auto total_time = std::chrono::duration_cast<std::chrono::duration<double>>(finish - begin);
+    try {
+        Mandelbrot::MandelbrotSetCuda mandelbrot_set;
+        mandelbrot_set.setResolution(args.width, args.height).setCenter(args.x_center, args.y_center, args.xsize);
 
-    cout << "Total time: " << total_time.count() << " seconds" << endl;
+        auto esc_map = mandelbrot_set.generateRawMatrix();
+        auto image = mandelbrot_set.generate();
+        auto high_gradient = mandelbrot_set.detectHighGradient(esc_map);
+
+        Mat high_gradient_image;
+        cv::applyColorMap(image, high_gradient_image, cv::COLOR_BGR2GRAY);
+        high_gradient_image.setTo(cv::Scalar(0, 0, 255), high_gradient);
+
+        imwrite("MandelbrotSetCudaGrad.png", high_gradient_image);
+        imwrite("MandelbrotSetCuda.png", image);
+    } catch (const std::exception &e) {
+        cerr << e.what() << endl;
+    }
+
+#endif
+
+    cout << "Total time: " << TIME_DIFF(begin) << " seconds" << endl;
 
     return 0;
 }

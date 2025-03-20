@@ -17,6 +17,10 @@ If you like this project, please give me a star. Thanks! :smile:
 - [ ] Benchmark
 - [x] CI/CD on GitHub using GitHub actions.
 
+## Binary Release
+
+For convenience, you can find binary releases in GitHub action artifacts. These binary releases are built with CUDA and OpenCV support.
+
 ## Build
 
 ### Pre-requisites
