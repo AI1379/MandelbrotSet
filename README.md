@@ -12,10 +12,10 @@ If you like this project, please give me a star. Thanks! :smile:
 - [x] Algorithm to auto detect infinite area
 - [x] Asynchronous I/O for image saving and video generation
 - [x] CPM for package management
-- [ ] Better commandline interface
-- [ ] BMP output without third-party library
-- [ ] Benchmark
 - [x] CI/CD on GitHub using GitHub actions.
+- [x] Better commandline interface
+- [ ] ~~BMP output without third-party library~~
+- [ ] ~~Benchmark~~
 - [ ] Report
 
 ## Binary Release

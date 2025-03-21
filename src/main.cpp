@@ -162,104 +162,6 @@ CommandLineArguments parseArguments(int argc, char **argv_raw) {
     return args;
 }
 
-vector<Mat> precomputeScaleMatrices(const Point2f &center, double scale_rate, int frames) {
-    vector<Mat> scale_matrices(frames);
-    double factor = 1.0;
-    for (int i = 0; i < frames; ++i) {
-        scale_matrices[i] = getRotationMatrix2D(center, 0, factor);
-        factor *= scale_rate;
-    }
-    return scale_matrices;
-}
-
-void generateVideo(const CommandLineArguments &args) {
-    // Require arguments: max_step, zoom_factor, scale_rate, x_center, y_center, xsize, width, height
-    // Some constants for the zooming animation. We may make them configurable later.
-    const int max_step = args.max_step;
-    const double zoom_factor = args.zoom_factor;
-    const double scale_rate = args.scale_rate;
-
-
-    // Seahorse Valley. We need a more precise center for this.
-    // double xcenter = -0.74525, ycenter = 0.12265;
-    const double xcenter = args.x_center, ycenter = args.y_center;
-
-    // Image resolution
-    const int width = args.width, height = args.height;
-
-    auto filename = args.set_output ? args.output : "MandelbrotSet.mp4";
-
-    cout << "Generating video..." << endl;
-    cout << "Resolution: " << width << " x " << height << endl;
-    cout << "Center: " << xcenter << ", " << ycenter << endl;
-    cout << "Max step: " << max_step << endl;
-    cout << fixed << setprecision(2);
-    cout << "Zoom factor: " << zoom_factor << endl;
-    cout << "Scale rate: " << scale_rate << endl;
-
-    const int frame_count = ceil(log(zoom_factor) / log(scale_rate));
-
-    DefaultMandelbrotSet mandelbrot_set;
-    mandelbrot_set.setResolution(width, height);
-
-    VideoWriter writer;
-    writer.open(filename, VideoWriter::fourcc('h', 'v', 'c', 'l'), 30, Size(width, height), true);
-    Point2f center(width / 2.0, height / 2.0);
-
-
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    const auto scale_matrices = precomputeScaleMatrices(center, scale_rate, frame_count);
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    auto diff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-
-    cout << "Time taken to precompute scale matrices: " << diff.count() << " seconds" << endl;
-
-    vector<Mat> frames(frame_count);
-
-    for (uint64_t i = 0, factor = (1 << i); i < max_step; ++i, factor *= zoom_factor) {
-
-        mandelbrot_set.setCenter(xcenter, ycenter, args.xsize / factor);
-
-        start = std::chrono::steady_clock::now();
-        const auto image = mandelbrot_set.generate();
-        end = std::chrono::steady_clock::now();
-        diff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-        cout << "Time taken to generate frame " << i + 1 << ": " << diff.count() << " seconds" << endl;
-
-
-        if (args.with_key_frames) {
-            filename = std::format("frames/MandelbrotSetKeyFrame{}.png", i + 1);
-            imwrite(filename, image);
-        }
-
-        if (i == max_step - 1)
-            break;
-
-        cout << "Start generating frames between " << i + 1 << " and " << i + 2 << endl;
-
-        start = std::chrono::steady_clock::now();
-
-#if ENABLE_OPENMP
-#pragma omp parallel for
-#endif
-        for (int idx = 0; idx < frame_count; ++idx) {
-            warpAffine(image, frames[idx], scale_matrices[idx], Size(width, height));
-        }
-
-        for (auto &frame: frames) {
-            writer.write(frame);
-        }
-
-        end = std::chrono::steady_clock::now();
-        diff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-
-        cout << "Time taken to generate frames between " << i + 1 << " and " << i + 2 << ": " << diff.count()
-             << " seconds" << endl;
-    }
-
-    writer.release();
-}
-
 void generateImage(const CommandLineArguments &args) {
     DefaultMandelbrotSet mandelbrot_set;
     mandelbrot_set.setResolution(args.width, args.height);
@@ -318,6 +220,7 @@ int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     cout << "Current implementation: " << CURRENT_IMPLEMENTATION << endl;
+    cout << "CPU cores: " << std::thread::hardware_concurrency() << endl;
 
 #if 1
     if (args.video) {

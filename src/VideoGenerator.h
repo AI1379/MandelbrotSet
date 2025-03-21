@@ -44,13 +44,13 @@ namespace Mandelbrot {
         using MandelbrotSetImpl = Mandelbrot::MandelbrotSet;
 #endif
 
-        // TODO: Make it configurable.
-        constexpr static auto worker_count_ = 4;
-        constexpr static auto io_count_ = 4;
-
         // Constants for the grid detection
         constexpr static int DIVIDE = 7;
         constexpr static int BLOCK_SIZE = 4;
+
+        unsigned int getWorkerCount() const { return worker_count_; }
+
+        unsigned int getIOCount() const { return io_count_; }
 
         // Settings for video generation
         VideoGenerator &setResolution(size_t width, size_t height) {
@@ -116,7 +116,6 @@ namespace Mandelbrot {
             return *this;
         }
 
-        // TODO: Make this asynchronous.
         void start() {
             println(stdout, "Generating video...");
             println(stdout, "Working threads: {}", worker_count_);
@@ -134,7 +133,7 @@ namespace Mandelbrot {
             frames_.resize(frame_count_);
             transform_matrices_.resize(frame_count_);
 
-            done_.store(false);
+            done_ = std::stop_source{};
             exec::async_scope scope;
             auto sched = compute_pool_.get_scheduler();
 
@@ -205,7 +204,7 @@ namespace Mandelbrot {
                                                   ex::then([this](auto &&arg) { this->imageWrite(arg); })));
             }
 
-            done_.store(true);
+            done_.request_stop();
             ex::sync_wait(scope.on_empty());
             println(stdout, "All work done on thread {} at {}s", std::this_thread::get_id(), TIME_DIFF(start_));
         }
@@ -257,7 +256,7 @@ namespace Mandelbrot {
             writer.open(video_name_, cv::VideoWriter::fourcc('h', 'v', 'c', 'l'), 30,
                         cv::Size(mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight()), true);
 
-            while (!done_.load() || !channel_.empty()) {
+            while (!done_.stop_requested() || !channel_.empty()) {
                 auto value = co_await channel_.receive();
                 if (value) {
                     auto [image, center] = value.value();
@@ -266,11 +265,17 @@ namespace Mandelbrot {
                     println(stdout, "Generating with center: ({}, {}) on thread {} at {}s", center.x, center.y,
                             std::this_thread::get_id(), TIME_DIFF(start_));
 
-                    // TODO: use stdexec::bulk to parallelize this.
-                    for (int i = 0; i < frame_count_; ++i) {
-                        cv::warpAffine(image, frames_[i], transform_matrices_[i],
-                                       cv::Size(mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight()));
-                    }
+                    co_await ( //
+                            ex::schedule(compute_pool_.get_scheduler()) //
+                            | ex::bulk(frame_count_, [&](int i) {
+                                  cv::warpAffine(image, frames_[i], transform_matrices_[i],
+                                                 cv::Size(mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight()));
+                              }));
+
+                    // for (int i = 0; i < frame_count_; ++i) {
+                    //     cv::warpAffine(image, frames_[i], transform_matrices_[i],
+                    //                    cv::Size(mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight()));
+                    // }
 
                     // Write the frames to the video.
                     // This has to be synchronous, otherwise the frames will be out of order.
@@ -313,8 +318,9 @@ namespace Mandelbrot {
         constexpr static auto frame_basename_ = "frames/MandelbrotSetKeyFrame{}.png";
 
         // Async settings and buffers
-        // TODO: Custom cancellation token to avoid using bool.
-        std::atomic<bool> done_{false};
+        unsigned int worker_count_{std::thread::hardware_concurrency() / 4 + 1};
+        unsigned int io_count_{std::thread::hardware_concurrency() / 2 + 1};
+        std::stop_source done_{};
         exec::static_thread_pool compute_pool_{worker_count_};
         exec::static_thread_pool io_pool_{io_count_};
         std::vector<cv::Mat> transform_matrices_{};
