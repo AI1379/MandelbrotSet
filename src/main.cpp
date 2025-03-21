@@ -35,6 +35,7 @@ struct CommandLineArguments {
     bool with_key_frames;
     bool set_output;
     string output;
+    bool auto_detect, show_grid;
 };
 
 #if ENABLE_CUDA
@@ -67,6 +68,8 @@ CommandLineArguments parseArguments(int argc, char **argv_raw) {
             .with_key_frames = false,
             .set_output = false,
             .output = "",
+            .auto_detect = false,
+            .show_grid = false,
     };
     vector<string> argv(argv_raw, argv_raw + argc);
     for (size_t i = 1; i < argc; i++) {
@@ -127,6 +130,10 @@ CommandLineArguments parseArguments(int argc, char **argv_raw) {
             args.set_output = true;
             args.output = argv[i + 1];
             ++i;
+        } else if (argv[i] == "--auto-detect") {
+            args.auto_detect = true;
+        } else if (argv[i] == "--show-grid") {
+            args.show_grid = true;
         } else if (argv[i] == "--help") {
             cout << "A simple Mandelbrot set generator" << endl;
             cout << "Current implementation: " << CURRENT_IMPLEMENTATION << endl;
@@ -145,6 +152,8 @@ CommandLineArguments parseArguments(int argc, char **argv_raw) {
             cout << "  --center <xcenter> <ycenter> <xsize> <ysize>   Set the center and size for video" << endl;
             cout << "  --video <max_step> <zoom_factor> <scale_rate>  Generate a zooming animation" << endl;
             cout << "  --with-keyframes                               Generate keyframes for the video" << endl;
+            cout << "  --auto-detect                                  Automatically detect keyframes" << endl;
+            cout << "  --show-grid                                    Show grid on keyframes" << endl;
             cout << "  --help                                         Display this help message" << endl;
             exit(0);
         }
@@ -294,9 +303,9 @@ void asyncGenerateVideo(const CommandLineArguments &args) {
             .setMaxStep(max_step)
             .setZoomFactor(zoom_factor)
             .setScaleRate(scale_rate)
-            .setColors(Mandelbrot::colorScheme2())
-            .autoDetect()
-            .showGrid();
+            .setColors(Mandelbrot::randomScheme())
+            .setAutoDetect(args.auto_detect)
+            .setShowGrid(args.show_grid);
 
     generator.start();
 }

@@ -101,8 +101,18 @@ namespace Mandelbrot {
             return *this;
         }
 
+        VideoGenerator &setAutoDetect(bool auto_detect) {
+            auto_detect_ = auto_detect;
+            return *this;
+        }
+
         VideoGenerator &showGrid() {
             show_grid_ = true;
+            return *this;
+        }
+
+        VideoGenerator &setShowGrid(bool show_grid) {
+            show_grid_ = show_grid;
             return *this;
         }
 
@@ -122,7 +132,7 @@ namespace Mandelbrot {
             // Start Timer
             start_ = std::chrono::steady_clock::now();
             frames_.resize(frame_count_);
-            scale_matrices_.resize(frame_count_);
+            transform_matrices_.resize(frame_count_);
 
             done_.store(false);
             exec::async_scope scope;
@@ -141,7 +151,7 @@ namespace Mandelbrot {
                         return res;
                     }));
 
-            PointType center;
+            PointType center = cv::Point2f(mandelbrot_set_.getWidth() / 2.0, mandelbrot_set_.getHeight() / 2.0);
 
             for (auto [step, factor]: steps) {
                 println(stdout, "Generating keyframe {} on thread {} at {}s", step, std::this_thread::get_id(),
@@ -217,11 +227,23 @@ namespace Mandelbrot {
             cv::circle(image, center, 30, cv::Scalar(0, 0, 255), 2);
         }
 
-        void precomputeScaleMatrices(const cv::Point2f &center, double scale_rate, int frames) {
+        void computeTransformMatrices(const cv::Point2f &center, double scale_rate, int frames) {
+            constexpr double EPS = 1e-9;
+            static PointType prev = center;
+            static bool initialized = false;
+            auto absolute_center = cv::Point2f(mandelbrot_set_.getWidth() / 2.0, mandelbrot_set_.getHeight() / 2.0);
             double factor = 1.0;
-            for (int i = 0; i < frames; ++i) {
-                scale_matrices_[i] = getRotationMatrix2D(center, 0, factor);
-                factor *= scale_rate;
+            if (std::fabs(center.x - prev.x) > EPS || std::fabs(center.y - prev.y) > EPS || !initialized) {
+                auto dx = center.x - absolute_center.x;
+                auto dy = center.y - absolute_center.y;
+                initialized = true;
+                for (int i = 0; i < frames; ++i) {
+                    transform_matrices_[i] = getRotationMatrix2D(center, 0, factor);
+                    transform_matrices_[i].at<double>(0, 2) -= dx * i / frames;
+                    transform_matrices_[i].at<double>(1, 2) -= dy * i / frames;
+                    factor *= scale_rate;
+                }
+                prev = center;
             }
         }
 
@@ -230,9 +252,6 @@ namespace Mandelbrot {
         }
 
         exec::task<void> interpolateFrames() {
-            constexpr double EPS = 1e-9;
-            cv::Point2d prev_center{0, 0};
-
             cv::VideoWriter writer;
             ScopeGuard guard{[&]() { writer.release(); }};
             writer.open(video_name_, cv::VideoWriter::fourcc('h', 'v', 'c', 'l'), 30,
@@ -242,18 +261,14 @@ namespace Mandelbrot {
                 auto value = co_await channel_.receive();
                 if (value) {
                     auto [image, center] = value.value();
-                    // lazy update of scale matrices
-                    if (std::fabs(center.x - prev_center.x) > EPS || std::fabs(center.y - prev_center.y) > EPS) {
-                        precomputeScaleMatrices(center, scale_rate_, frame_count_);
-                        prev_center = center;
-                    }
+                    computeTransformMatrices(center, scale_rate_, frame_count_);
 
                     println(stdout, "Generating with center: ({}, {}) on thread {} at {}s", center.x, center.y,
                             std::this_thread::get_id(), TIME_DIFF(start_));
 
                     // TODO: use stdexec::bulk to parallelize this.
                     for (int i = 0; i < frame_count_; ++i) {
-                        cv::warpAffine(image, frames_[i], scale_matrices_[i],
+                        cv::warpAffine(image, frames_[i], transform_matrices_[i],
                                        cv::Size(mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight()));
                     }
 
@@ -302,7 +317,7 @@ namespace Mandelbrot {
         std::atomic<bool> done_{false};
         exec::static_thread_pool compute_pool_{worker_count_};
         exec::static_thread_pool io_pool_{io_count_};
-        std::vector<cv::Mat> scale_matrices_{};
+        std::vector<cv::Mat> transform_matrices_{};
         std::vector<cv::Mat> frames_{};
         MandelbrotSetImpl mandelbrot_set_{};
         AsyncChannel<std::pair<cv::Mat, PointType>> channel_{};
