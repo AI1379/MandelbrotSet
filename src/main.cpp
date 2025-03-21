@@ -314,23 +314,65 @@ int main(int argc, char **argv) {
     }
 #else
 
-    try {
-        Mandelbrot::MandelbrotSetCuda mandelbrot_set;
-        mandelbrot_set.setResolution(args.width, args.height).setCenter(args.x_center, args.y_center, args.xsize);
+    Mandelbrot::MandelbrotSetCuda mandelbrot_set;
+    mandelbrot_set.setResolution(args.width, args.height).setCenter(args.x_center, args.y_center, args.xsize);
 
-        auto esc_map = mandelbrot_set.generateRawMatrix();
-        auto image = mandelbrot_set.generate();
-        auto high_gradient = mandelbrot_set.detectHighGradient(esc_map);
+    auto esc_map = mandelbrot_set.generateRawMatrix();
+    auto image = mandelbrot_set.generate();
+    auto high_gradient = mandelbrot_set.detectHighGradient(esc_map);
 
-        Mat high_gradient_image;
-        cv::applyColorMap(image, high_gradient_image, cv::COLOR_BGR2GRAY);
-        high_gradient_image.setTo(cv::Scalar(0, 0, 255), high_gradient);
+    vector<cv::Rect> bounding_boxes;
+    constexpr int DIVIDE = 7;
+    constexpr int BLOCK_SIZE = 4;
+    auto l = image.cols / DIVIDE * (DIVIDE / 2), r = image.cols / DIVIDE * (DIVIDE / 2 + 1);
+    auto t = image.rows / DIVIDE * (DIVIDE / 2), b = image.rows / DIVIDE * (DIVIDE / 2 + 1);
+    auto w = image.cols / (DIVIDE * BLOCK_SIZE), h = image.rows / (DIVIDE * BLOCK_SIZE);
 
-        imwrite("MandelbrotSetCudaGrad.png", high_gradient_image);
-        imwrite("MandelbrotSetCuda.png", image);
-    } catch (const std::exception &e) {
-        cerr << e.what() << endl;
+#if __cpp_lib_ranges_to_container >= 202202L
+    using std::ranges::to;
+#else
+    using ranges::to;
+#endif
+
+    auto sums = views::cartesian_product(views::iota(0, BLOCK_SIZE), views::iota(0, BLOCK_SIZE)) //
+                | views::transform([&](const auto &p) {
+                      auto [i, j] = p;
+                      return std::make_tuple(cv::Rect(l + i * w, t + j * h, w, h), i, j);
+                  }) //
+                | views::transform([&high_gradient](const auto &p) {
+                      const auto &[rect, i, j] = p;
+                      return std::make_tuple(cv::sum(high_gradient(rect))[0], i, j);
+                  });
+
+    for (auto [sum, x, y]: sums) {
+        println(stdout, "Sum: {}, x: {}, y: {}", sum, x, y);
     }
+
+    auto [sum, x, y] = *ranges::max_element(sums, std::less<>(), [](const auto &p) { return std::get<0>(p); });
+    auto center = cv::Point2f(l + x * w + w / 2, t + y * h + h / 2);
+
+    Mat high_gradient_image;
+    cv::applyColorMap(image, high_gradient_image, cv::COLOR_BGR2GRAY);
+    high_gradient_image.setTo(cv::Scalar(0, 0, 255), high_gradient);
+
+    cv::line(high_gradient_image, cv::Point(0, t), cv::Point(image.cols, t), cv::Scalar(0, 255, 0), 2);
+    cv::line(high_gradient_image, cv::Point(0, b), cv::Point(image.cols, b), cv::Scalar(0, 255, 0), 2);
+    cv::line(high_gradient_image, cv::Point(l, 0), cv::Point(l, image.rows), cv::Scalar(0, 255, 0), 2);
+    cv::line(high_gradient_image, cv::Point(r, 0), cv::Point(r, image.rows), cv::Scalar(0, 255, 0), 2);
+
+    for (auto k: views::iota(1, BLOCK_SIZE)) {
+        cv::line(high_gradient_image, cv::Point(l + k * w, t), cv::Point(l + k * w, b), cv::Scalar(0, 255, 0), 2);
+        cv::line(high_gradient_image, cv::Point(l, t + k * h), cv::Point(r, t + k * h), cv::Scalar(0, 255, 0), 2);
+    }
+
+    cv::line(high_gradient_image, cv::Point(0, center.y), cv::Point(high_gradient_image.cols, center.y),
+             cv::Scalar(255, 0, 0), 2);
+    cv::line(high_gradient_image, cv::Point(center.x, 0), cv::Point(center.x, high_gradient_image.rows),
+             cv::Scalar(255, 0, 0), 2);
+    cv::circle(high_gradient_image, center, 30, cv::Scalar(255, 0, 0), 2);
+
+    imwrite("MandelbrotSetCudaGrad.png", high_gradient_image);
+    imwrite("MandelbrotSetCuda.png", image);
 
 #endif
 
