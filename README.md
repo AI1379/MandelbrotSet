@@ -6,7 +6,7 @@ It was inspired by the math soft course during the Spring 2025 semester at ZJU.
 
 If you like this project, please give me a star. Thanks! :smile:
 
-## TODO
+## Features
 
 - [x] Add more color schemes
 - [x] Algorithm to auto detect infinite area
@@ -16,11 +16,26 @@ If you like this project, please give me a star. Thanks! :smile:
 - [x] Better commandline interface
 - [ ] ~~BMP output without third-party library~~
 - [ ] ~~Benchmark~~
-- [ ] Report
+- [ ] Report and documentation
+- [ ] Import AI to create memes based on the Mandelbrot set
+- [ ] Julia set
+
+### Bonus Points
+
+- [x] Submitted before the sixth week
+- [x] With a clear code structure with detailed comments and documentation
+- [x] Using CMake for building
+- [x] Better visualization using OpenCV
+- [x] More than one color scheme
+- [x] Generating video zooming in
+- [x] Using [P2300 -  `std::execution`](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2300r10.html) for
+  parallelization
+- [x] Detecting infinite area using gradient descent algorithm
 
 ## Binary Release
 
-For convenience, you can find binary releases in GitHub action artifacts. These binary releases are built with CUDA and OpenCV support.
+For convenience, you can find binary releases in GitHub action artifacts. These binary releases are built with CUDA and
+OpenCV support. You may need to install OpenCV and CUDA runtime to run the binary.
 
 ## Build
 
@@ -31,10 +46,15 @@ gcc.
 
 - CMake
 - OpenCV (recommended)
-- [NVIDIA/stdexec](https://github.com/NVIDIA/stdexec) (optional) (recommended)
-- Any modern C++ compiler support OpenMP
+- Any modern C++ compiler support OpenMP and C++20. C++23 will be better.
 - CUDA (optional) (recommended)
-- MPFR (optional)
+- MPFR (optional) (not recommended)
+
+We use [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) for package management. It will automatically download and
+build other dependencies,
+including [NVIDIA/stdexec](https://github.com/NVIDIA/stdexec), [ericniebler/range-v3](https://github.com/ericniebler/range-v3)
+and [fmtlib/fmt](https://github.com/fmtlib/fmt). All these dependencies are header-only libraries, and they will be or
+have already been part of C++ standard library in C++23 or later.
 
 ### Options
 
@@ -82,3 +102,7 @@ It is recommended using `ninja` as the generator for better performance.
 ## Usage
 
 Assuming that the executable is named `mandelbrot`. You can run `mandelbrot --help` to see the usage.
+
+```text
+
+```

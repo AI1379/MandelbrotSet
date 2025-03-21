@@ -49,6 +49,47 @@ using DefaultMandelbrotSet = Mandelbrot::MandelbrotSet;
 constexpr std::string_view CURRENT_IMPLEMENTATION = "Pure CPU";
 #endif
 
+#define MAND_ASSERT(cond)                                                                                              \
+    do {                                                                                                               \
+        if (!(cond)) {                                                                                                 \
+            goto error;                                                                                                \
+        }                                                                                                              \
+    } while (0)
+
+constexpr static auto HELP_MSG = R"(
+A simple Mandelbrot set generator
+
+Usage: mandelbrot [options]
+Options:
+    -o / --output <filename>                       Set the filename of the output file
+    --resolution <width> <height>                  Set the resolution of the image
+    --width <width>                                Set the width of the image
+    --height <height>                              Set the height of the image
+    --xmin <xmin>                                  Set the minimum x value
+    --xmax <xmax>                                  Set the maximum x value
+    --ymin <ymin>                                  Set the minimum y value
+    --ymax <ymax>                                  Set the maximum y value
+    --range <xmin> <xmax> <ymin> <ymax>            Set the range of x and y values
+    --center <xcenter> <ycenter> <xsize> <ysize>   Set the center and size for video
+    --video <max_step> <zoom_factor> <scale_rate>  Generate a zooming animation
+    --with-keyframes                               Generate keyframes for the video
+    --auto-detect                                  Automatically detect keyframes
+    --show-grid                                    Show grid on keyframes
+    --help                                         Display this help message
+
+Default values:
+    width: 2048
+    height: 2048
+    xmin: -2.0
+    xmax: 2.0
+    ymin: -2.0
+    ymax: 2.0
+
+Example:
+    mandelbrot --resolution 2048 2048 --xmin -2.0 --xmax 2.0 --ymin -2.0 --ymax 2.0
+    mandelbrot --video 100 4.0 1.03 --center -0.74525 0.12265 4.0 5.0
+)";
+
 CommandLineArguments parseArguments(int argc, char **argv_raw) {
     CommandLineArguments args = {
             .width = 2048,
@@ -61,7 +102,7 @@ CommandLineArguments parseArguments(int argc, char **argv_raw) {
             .x_center = 0.0,
             .y_center = 0.0,
             .xsize = 4.0,
-            .ysize = 5.0,
+            .ysize = 4.0,
             .max_step = 10,
             .zoom_factor = 4.0,
             .scale_rate = 1.03,
@@ -73,93 +114,84 @@ CommandLineArguments parseArguments(int argc, char **argv_raw) {
     };
     vector<string> argv(argv_raw, argv_raw + argc);
     for (size_t i = 1; i < argc; i++) {
-        if (argv[i] == "--resolution") {
-            assert(i + 2 < argc);
-            args.width = std::stoi(argv[i + 1]);
-            args.height = std::stoi(argv[i + 2]);
-            i += 2;
-        } else if (argv[i] == "--width") {
-            assert(i + 1 < argc);
-            args.width = std::stoi(argv[i + 1]);
-            ++i;
-        } else if (argv[i] == "--height") {
-            assert(i + 1 < argc);
-            args.height = std::stoi(argv[i + 1]);
-            ++i;
-        } else if (argv[i] == "--xmin") {
-            assert(i + 1 < argc);
-            args.x_min = std::stod(argv[i + 1]);
-            ++i;
-        } else if (argv[i] == "--xmax") {
-            assert(i + 1 < argc);
-            args.x_max = std::stod(argv[i + 1]);
-            ++i;
-        } else if (argv[i] == "--ymin") {
-            assert(i + 1 < argc);
-            args.y_min = std::stod(argv[i + 1]);
-            ++i;
-        } else if (argv[i] == "--ymax") {
-            assert(i + 1 < argc);
-            args.y_max = std::stod(argv[i + 1]);
-            ++i;
-        } else if (argv[i] == "--range") {
-            assert(i + 4 < argc);
-            args.x_min = std::stod(argv[i + 1]);
-            args.x_max = std::stod(argv[i + 2]);
-            args.y_min = std::stod(argv[i + 3]);
-            args.y_max = std::stod(argv[i + 4]);
-            i += 4;
-        } else if (argv[i] == "--center") {
-            assert(i + 4 < argc);
-            args.x_center = std::stod(argv[i + 1]);
-            args.y_center = std::stod(argv[i + 2]);
-            args.xsize = std::stod(argv[i + 3]);
-            args.ysize = std::stod(argv[i + 4]);
-            i += 4;
-        } else if (argv[i] == "--video") {
-            assert(i + 3 < argc);
-            args.video = true;
-            args.max_step = std::stoi(argv[i + 1]);
-            args.zoom_factor = std::stod(argv[i + 2]);
-            args.scale_rate = std::stod(argv[i + 3]);
-            i += 3;
-        } else if (argv[i] == "--with-keyframes") {
-            args.with_key_frames = true;
-        } else if (argv[i] == "-o" || argv[i] == "--output") {
-            assert(i + 1 < argc);
-            args.set_output = true;
-            args.output = argv[i + 1];
-            ++i;
-        } else if (argv[i] == "--auto-detect") {
-            args.auto_detect = true;
-        } else if (argv[i] == "--show-grid") {
-            args.show_grid = true;
-        } else if (argv[i] == "--help") {
-            cout << "A simple Mandelbrot set generator" << endl;
-            cout << "Current implementation: " << CURRENT_IMPLEMENTATION << endl;
-            cout << endl;
-            cout << "Usage: " << argv[0] << " [options]" << endl;
-            cout << "Options:" << endl;
-            cout << "  -o / --output <filename>                       Set the filename of the output file" << endl;
-            cout << "  --resolution <width> <height>                  Set the resolution of the image" << endl;
-            cout << "  --width <width>                                Set the width of the image" << endl;
-            cout << "  --height <height>                              Set the height of the image" << endl;
-            cout << "  --xmin <xmin>                                  Set the minimum x value" << endl;
-            cout << "  --xmax <xmax>                                  Set the maximum x value" << endl;
-            cout << "  --ymin <ymin>                                  Set the minimum y value" << endl;
-            cout << "  --ymax <ymax>                                  Set the maximum y value" << endl;
-            cout << "  --range <xmin> <xmax> <ymin> <ymax>            Set the range of x and y values" << endl;
-            cout << "  --center <xcenter> <ycenter> <xsize> <ysize>   Set the center and size for video" << endl;
-            cout << "  --video <max_step> <zoom_factor> <scale_rate>  Generate a zooming animation" << endl;
-            cout << "  --with-keyframes                               Generate keyframes for the video" << endl;
-            cout << "  --auto-detect                                  Automatically detect keyframes" << endl;
-            cout << "  --show-grid                                    Show grid on keyframes" << endl;
-            cout << "  --help                                         Display this help message" << endl;
-            exit(0);
+        try {
+            if (argv[i] == "--resolution") {
+                MAND_ASSERT(i + 2 < argc);
+                args.width = std::stoi(argv[i + 1]);
+                args.height = std::stoi(argv[i + 2]);
+                i += 2;
+            } else if (argv[i] == "--width") {
+                MAND_ASSERT(i + 1 < argc);
+                args.width = std::stoi(argv[i + 1]);
+                ++i;
+            } else if (argv[i] == "--height") {
+                MAND_ASSERT(i + 1 < argc);
+                args.height = std::stoi(argv[i + 1]);
+                ++i;
+            } else if (argv[i] == "--xmin") {
+                MAND_ASSERT(i + 1 < argc);
+                args.x_min = std::stod(argv[i + 1]);
+                ++i;
+            } else if (argv[i] == "--xmax") {
+                MAND_ASSERT(i + 1 < argc);
+                args.x_max = std::stod(argv[i + 1]);
+                ++i;
+            } else if (argv[i] == "--ymin") {
+                MAND_ASSERT(i + 1 < argc);
+                args.y_min = std::stod(argv[i + 1]);
+                ++i;
+            } else if (argv[i] == "--ymax") {
+                MAND_ASSERT(i + 1 < argc);
+                args.y_max = std::stod(argv[i + 1]);
+                ++i;
+            } else if (argv[i] == "--range") {
+                MAND_ASSERT(i + 4 < argc);
+                args.x_min = std::stod(argv[i + 1]);
+                args.x_max = std::stod(argv[i + 2]);
+                args.y_min = std::stod(argv[i + 3]);
+                args.y_max = std::stod(argv[i + 4]);
+                i += 4;
+            } else if (argv[i] == "--center") {
+                MAND_ASSERT(i + 4 < argc);
+                args.x_center = std::stod(argv[i + 1]);
+                args.y_center = std::stod(argv[i + 2]);
+                args.xsize = std::stod(argv[i + 3]);
+                args.ysize = std::stod(argv[i + 4]);
+                i += 4;
+            } else if (argv[i] == "--video") {
+                MAND_ASSERT(i + 3 < argc);
+                args.video = true;
+                args.max_step = std::stoi(argv[i + 1]);
+                args.zoom_factor = std::stod(argv[i + 2]);
+                args.scale_rate = std::stod(argv[i + 3]);
+                i += 3;
+            } else if (argv[i] == "--with-keyframes") {
+                args.with_key_frames = true;
+            } else if (argv[i] == "-o" || argv[i] == "--output") {
+                MAND_ASSERT(i + 1 < argc);
+                args.set_output = true;
+                args.output = argv[i + 1];
+                ++i;
+            } else if (argv[i] == "--auto-detect") {
+                args.auto_detect = true;
+            } else if (argv[i] == "--show-grid") {
+                args.show_grid = true;
+            } else if (argv[i] == "--help") {
+                cout << HELP_MSG;
+                exit(0);
+            } else {
+                goto error;
+            }
+        } catch (std::exception &e) {
+            goto error;
         }
     }
-
     return args;
+
+error:
+    cout << "Invalid arguments" << endl;
+    cout << HELP_MSG;
+    terminate();
 }
 
 void generateImage(const CommandLineArguments &args) {

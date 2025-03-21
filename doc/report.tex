@@ -99,6 +99,11 @@
     The maximum number of iterations $N$ is usually set to 1000.
     We will use this algorithm to generate the Mandelbrot set.
 
+    Furthermore, aiming to better explore the Mandelbrot set, we will use the gradient of the layer function to detect
+    the edge of the Mandelbrot set.
+    This will allow us to generate a more detailed image of the Mandelbrot set.
+    In detail, we will use the Sobel operator to calculate the gradient of the layer function.
+
 
     \section{Optimizations}\label{sec:optimizations}
 

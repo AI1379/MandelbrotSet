@@ -48,7 +48,6 @@ namespace Mandelbrot {
     }
 
     cv::Mat MandelbrotSetCuda::generateRawMatrixImpl() const {
-        // TODO: reuse memory
         float *d_image;
         CHECK_CUDA(cudaMalloc(&d_image, width_ * height_ * sizeof(int)));
 
