@@ -315,11 +315,13 @@ int main(int argc, char **argv) {
 #else
 
     Mandelbrot::MandelbrotSetCuda mandelbrot_set;
-    mandelbrot_set.setResolution(args.width, args.height).setCenter(args.x_center, args.y_center, args.xsize);
+    mandelbrot_set.setResolution(args.width, args.height)
+            .setCenter(args.x_center, args.y_center, args.xsize)
+            .setColors(Mandelbrot::colorScheme2());
 
     auto esc_map = mandelbrot_set.generateRawMatrix();
     auto image = mandelbrot_set.generate();
-    auto high_gradient = mandelbrot_set.detectHighGradient(esc_map);
+    auto high_gradient = Mandelbrot::detectHighGradient(esc_map);
 
     vector<cv::Rect> bounding_boxes;
     constexpr int DIVIDE = 7;
@@ -355,21 +357,19 @@ int main(int argc, char **argv) {
     cv::applyColorMap(image, high_gradient_image, cv::COLOR_BGR2GRAY);
     high_gradient_image.setTo(cv::Scalar(0, 0, 255), high_gradient);
 
-    cv::line(high_gradient_image, cv::Point(0, t), cv::Point(image.cols, t), cv::Scalar(0, 255, 0), 2);
-    cv::line(high_gradient_image, cv::Point(0, b), cv::Point(image.cols, b), cv::Scalar(0, 255, 0), 2);
-    cv::line(high_gradient_image, cv::Point(l, 0), cv::Point(l, image.rows), cv::Scalar(0, 255, 0), 2);
-    cv::line(high_gradient_image, cv::Point(r, 0), cv::Point(r, image.rows), cv::Scalar(0, 255, 0), 2);
+    cv::line(image, cv::Point(0, t), cv::Point(image.cols, t), cv::Scalar(0, 255, 0), 2);
+    cv::line(image, cv::Point(0, b), cv::Point(image.cols, b), cv::Scalar(0, 255, 0), 2);
+    cv::line(image, cv::Point(l, 0), cv::Point(l, image.rows), cv::Scalar(0, 255, 0), 2);
+    cv::line(image, cv::Point(r, 0), cv::Point(r, image.rows), cv::Scalar(0, 255, 0), 2);
 
     for (auto k: views::iota(1, BLOCK_SIZE)) {
-        cv::line(high_gradient_image, cv::Point(l + k * w, t), cv::Point(l + k * w, b), cv::Scalar(0, 255, 0), 2);
-        cv::line(high_gradient_image, cv::Point(l, t + k * h), cv::Point(r, t + k * h), cv::Scalar(0, 255, 0), 2);
+        cv::line(image, cv::Point(l + k * w, t), cv::Point(l + k * w, b), cv::Scalar(0, 255, 0), 2);
+        cv::line(image, cv::Point(l, t + k * h), cv::Point(r, t + k * h), cv::Scalar(0, 255, 0), 2);
     }
 
-    cv::line(high_gradient_image, cv::Point(0, center.y), cv::Point(high_gradient_image.cols, center.y),
-             cv::Scalar(255, 0, 0), 2);
-    cv::line(high_gradient_image, cv::Point(center.x, 0), cv::Point(center.x, high_gradient_image.rows),
-             cv::Scalar(255, 0, 0), 2);
-    cv::circle(high_gradient_image, center, 30, cv::Scalar(255, 0, 0), 2);
+    cv::line(image, cv::Point(0, center.y), cv::Point(image.cols, center.y), cv::Scalar(255, 0, 0), 2);
+    cv::line(image, cv::Point(center.x, 0), cv::Point(center.x, image.rows), cv::Scalar(255, 0, 0), 2);
+    cv::circle(image, center, 30, cv::Scalar(255, 0, 0), 2);
 
     imwrite("MandelbrotSetCudaGrad.png", high_gradient_image);
     imwrite("MandelbrotSetCuda.png", image);

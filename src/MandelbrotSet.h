@@ -24,7 +24,7 @@ namespace Mandelbrot {
         MandelbrotSet(const size_t width, const size_t height) : BaseMandelbrotSet(width, height) {}
 
     private:
-        [[nodiscard]] cv::Mat generateImpl() const;
+        [[nodiscard]] cv::Mat generateRawMatrixImpl() const;
         [[nodiscard]] static size_t computeEscapeTime(const std::complex<double> &c);
         [[nodiscard]] static cv::Vec3b computeColor(size_t escape_time);
     };

@@ -18,30 +18,8 @@ namespace Mandelbrot {
         return MAX_ITERATIONS;
     }
 
-    cv::Vec3b MandelbrotSet::computeColor(size_t escape_time) {
-        static cv::Vec3b colors[MAX_ITERATIONS] = {};
-        static bool initialized[MAX_ITERATIONS] = {};
-        if (escape_time == MAX_ITERATIONS) {
-            return {0, 0, 0};
-        }
-        if (initialized[escape_time]) {
-            return colors[escape_time];
-        }
-
-        double hue = 255 * fmod(escape_time * 0.3, 1.0);
-        double sat = 255;
-        double val = (escape_time < MAX_ITERATIONS) ? 255 : 0;
-
-        cv::Mat hsv(1, 1, CV_8UC3, cv::Scalar(hue, sat, val));
-        cv::Mat bgr;
-        cv::cvtColor(hsv, bgr, cv::COLOR_HSV2BGR);
-        colors[escape_time] = bgr.at<cv::Vec3b>(0, 0);
-        initialized[escape_time] = true;
-        return bgr.at<cv::Vec3b>(0, 0);
-    }
-
-    cv::Mat MandelbrotSet::generateImpl() const {
-        cv::Mat image(height_, width_, CV_8UC3);
+    cv::Mat MandelbrotSet::generateRawMatrixImpl() const {
+        cv::Mat image(height_, width_, CV_32FC1);
 
         const double xscale = (x_max_ - x_min_) / width_;
         const double yscale = (y_max_ - y_min_) / height_;
@@ -55,7 +33,7 @@ namespace Mandelbrot {
                 double ycoord = y_min_ + y * yscale;
                 std::complex<double> c(xcoord, ycoord);
                 size_t escape_time = computeEscapeTime(c);
-                image.at<cv::Vec3b>(y, x) = computeColor(escape_time);
+                image.at<float>(y, x) = static_cast<float>(escape_time);
             }
         }
 

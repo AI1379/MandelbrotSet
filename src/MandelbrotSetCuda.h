@@ -19,15 +19,9 @@ namespace Mandelbrot {
         constexpr static int BLOCK_SIZE = 16;
         constexpr static double ESCAPE_RADIUS = 2.0;
         constexpr static double ESCAPE_RADIUS_SQ = ESCAPE_RADIUS * ESCAPE_RADIUS;
-        constexpr static double GRADIENT_THRESHOLD = 0.5;
-
-        // TODO: Currently we only implement this for CUDA.
-        [[nodiscard]] cv::Mat generateRawMatrix() const;
-
-        [[nodiscard]] cv::Mat detectHighGradient(const cv::Mat& matrix) const;
 
     private:
-        [[nodiscard]] cv::Mat generateImpl() const;
+        [[nodiscard]] cv::Mat generateRawMatrixImpl() const;
     };
 } // namespace Mandelbrot
 
