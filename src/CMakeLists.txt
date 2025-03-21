@@ -18,6 +18,8 @@ CPMAddPackage(
 set(MANDELBROT_SET_SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSet.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/VideoGenerator.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ColorSchemes.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Algorithm.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
 )
 

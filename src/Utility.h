@@ -64,6 +64,7 @@ namespace Mandelbrot {
     };
 
     namespace views = std::views;
+    namespace ranges = std::ranges;
 
 #if __cpp_lib_print >= 202207L
     using std::println;

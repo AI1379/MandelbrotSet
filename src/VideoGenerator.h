@@ -16,6 +16,8 @@
 #include <ranges>
 #include <stdexec/coroutine.hpp>
 #include <stdexec/execution.hpp>
+#include <utility>
+#include "Algorithm.h"
 #include "MandelbrotSet.h"
 #include "MandelbrotSetCuda.h"
 #include "Utility.h"
@@ -46,9 +48,9 @@ namespace Mandelbrot {
         constexpr static auto worker_count_ = 4;
         constexpr static auto io_count_ = 4;
 
-        // Next center for the Mandelbrot set.
-        // TODO: Implement this.
-        PointType nextCenter() { return {}; }
+        // Constants for the grid detection
+        constexpr static int DIVIDE = 7;
+        constexpr static int BLOCK_SIZE = 4;
 
         // Settings for video generation
         VideoGenerator &setResolution(size_t width, size_t height) {
@@ -89,6 +91,21 @@ namespace Mandelbrot {
             return *this;
         }
 
+        VideoGenerator &setColors(ColorSchemeType colors) {
+            mandelbrot_set_.setColors(colors);
+            return *this;
+        }
+
+        VideoGenerator &autoDetect() {
+            auto_detect_ = true;
+            return *this;
+        }
+
+        VideoGenerator &showGrid() {
+            show_grid_ = true;
+            return *this;
+        }
+
         // TODO: Make this asynchronous.
         void start() {
             println(stdout, "Generating video...");
@@ -107,7 +124,6 @@ namespace Mandelbrot {
             frames_.resize(frame_count_);
             scale_matrices_.resize(frame_count_);
 
-            precomputeScaleMatrices(center_, scale_rate_, frame_count_);
             done_.store(false);
             exec::async_scope scope;
             auto sched = compute_pool_.get_scheduler();
@@ -125,14 +141,55 @@ namespace Mandelbrot {
                         return res;
                     }));
 
+            PointType center;
+
             for (auto [step, factor]: steps) {
                 println(stdout, "Generating keyframe {} on thread {} at {}s", step, std::this_thread::get_id(),
                         TIME_DIFF(start_));
                 mandelbrot_set_.setCenter(center_.x, center_.y, xsize_ / factor, ysize_ / factor);
-                auto res = mandelbrot_set_.generate();
+                cv::Mat res;
+                if (auto_detect_) {
+                    auto mat = mandelbrot_set_.generateRawMatrix();
+                    auto mask = detectHighGradient(mat);
+                    auto l = mat.cols / DIVIDE * (DIVIDE / 2), r = mat.cols / DIVIDE * (DIVIDE / 2 + 1);
+                    auto t = mat.rows / DIVIDE * (DIVIDE / 2), b = mat.rows / DIVIDE * (DIVIDE / 2 + 1);
+                    auto w = mat.cols / (DIVIDE * BLOCK_SIZE), h = mat.rows / (DIVIDE * BLOCK_SIZE);
+                    auto sums = views::cartesian_product(views::iota(0, BLOCK_SIZE), views::iota(0, BLOCK_SIZE)) //
+                                | views::transform([&](const auto &p) {
+                                      auto [i, j] = p;
+                                      return std::make_tuple(cv::Rect(l + i * w, t + j * h, w, h), i, j);
+                                  }) //
+                                | views::transform([&mask](const auto &p) {
+                                      const auto &[rect, i, j] = p;
+                                      return std::make_tuple(cv::sum(mask(rect))[0], i, j);
+                                  });
+
+                    auto [sum, x, y] =
+                            *ranges::max_element(sums, std::less<>(), [](const auto &p) { return std::get<0>(p); });
+                    res = mandelbrot_set_.colorize(mat);
+
+                    center = cv::Point2d(l + x * w + w / 2, t + y * h + h / 2);
+                    if (show_grid_) {
+                        printGrid(res, l, r, t, b, w, h, center);
+                    }
+
+                    // Update the center for the next iteration.
+                    auto xmin = mandelbrot_set_.getXMin(), xmax = mandelbrot_set_.getXMax();
+                    auto ymin = mandelbrot_set_.getYMin(), ymax = mandelbrot_set_.getYMax();
+                    center_.x = xmin + center.x * (xmax - xmin) / res.cols;
+                    center_.y = ymin + center.y * (ymax - ymin) / res.rows;
+
+                } else {
+                    res = mandelbrot_set_.generate();
+                }
+
                 println(stdout, "Keyframes generated on thread {} at {}s", std::this_thread::get_id(),
                         TIME_DIFF(start_));
-                channel_.send(res);
+
+                // Call the interpolation function.
+                channel_.send(std::make_pair(res, center));
+
+                // Call the image write function.
                 scope.spawn(ex::starts_on(io_pool_.get_scheduler(),
                                           ex::just(std::make_pair(std::move(res), step)) |
                                                   ex::then([this](auto &&arg) { this->imageWrite(arg); })));
@@ -144,6 +201,22 @@ namespace Mandelbrot {
         }
 
     private:
+        static void printGrid(cv::Mat &image, int l, int r, int t, int b, int w, int h, cv::Point2d center) {
+            cv::line(image, cv::Point(0, t), cv::Point(image.cols, t), cv::Scalar(0, 255, 0), 2);
+            cv::line(image, cv::Point(0, b), cv::Point(image.cols, b), cv::Scalar(0, 255, 0), 2);
+            cv::line(image, cv::Point(l, 0), cv::Point(l, image.rows), cv::Scalar(0, 255, 0), 2);
+            cv::line(image, cv::Point(r, 0), cv::Point(r, image.rows), cv::Scalar(0, 255, 0), 2);
+
+            for (auto k: views::iota(1, BLOCK_SIZE)) {
+                cv::line(image, cv::Point(l + k * w, t), cv::Point(l + k * w, b), cv::Scalar(0, 255, 0), 2);
+                cv::line(image, cv::Point(l, t + k * h), cv::Point(r, t + k * h), cv::Scalar(0, 255, 0), 2);
+            }
+
+            cv::line(image, cv::Point(0, center.y), cv::Point(image.cols, center.y), cv::Scalar(0, 0, 255), 2);
+            cv::line(image, cv::Point(center.x, 0), cv::Point(center.x, image.rows), cv::Scalar(0, 0, 255), 2);
+            cv::circle(image, center, 30, cv::Scalar(0, 0, 255), 2);
+        }
+
         void precomputeScaleMatrices(const cv::Point2f &center, double scale_rate, int frames) {
             double factor = 1.0;
             for (int i = 0; i < frames; ++i) {
@@ -157,17 +230,35 @@ namespace Mandelbrot {
         }
 
         exec::task<void> interpolateFrames() {
+            constexpr double EPS = 1e-9;
+            cv::Point2d prev_center{0, 0};
+
             cv::VideoWriter writer;
             ScopeGuard guard{[&]() { writer.release(); }};
             writer.open(video_name_, cv::VideoWriter::fourcc('h', 'v', 'c', 'l'), 30,
                         cv::Size(mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight()), true);
+
             while (!done_.load() || !channel_.empty()) {
                 auto value = co_await channel_.receive();
                 if (value) {
+                    auto [image, center] = value.value();
+                    // lazy update of scale matrices
+                    if (std::fabs(center.x - prev_center.x) > EPS || std::fabs(center.y - prev_center.y) > EPS) {
+                        precomputeScaleMatrices(center, scale_rate_, frame_count_);
+                        prev_center = center;
+                    }
+
+                    println(stdout, "Generating with center: ({}, {}) on thread {} at {}s", center.x, center.y,
+                            std::this_thread::get_id(), TIME_DIFF(start_));
+
+                    // TODO: use stdexec::bulk to parallelize this.
                     for (int i = 0; i < frame_count_; ++i) {
-                        cv::warpAffine(value.value(), frames_[i], scale_matrices_[i],
+                        cv::warpAffine(image, frames_[i], scale_matrices_[i],
                                        cv::Size(mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight()));
                     }
+
+                    // Write the frames to the video.
+                    // This has to be synchronous, otherwise the frames will be out of order.
                     for (auto &frame: frames_) {
                         writer.write(frame);
                     }
@@ -196,11 +287,13 @@ namespace Mandelbrot {
         double xsize_{4.0}, ysize_{4.0};
         double zoom_factor_{4.0};
         double scale_rate_{1.03};
-        // ceil(log(zoom_factor) / log(scale_rate))
+        // frame_count = ceil(log(zoom_factor) / log(scale_rate))
         size_t frame_count_{47};
         size_t max_step_{10};
-        size_t current_step_{0};
+        bool auto_detect_{false};
+        bool show_grid_{false};
         std::string video_name_{"MandelbrotSet.mp4"};
+
         // TODO: Currently the frame basename is hardcoded. We need to make it configurable.
         constexpr static auto frame_basename_ = "frames/MandelbrotSetKeyFrame{}.png";
 
@@ -212,7 +305,7 @@ namespace Mandelbrot {
         std::vector<cv::Mat> scale_matrices_{};
         std::vector<cv::Mat> frames_{};
         MandelbrotSetImpl mandelbrot_set_{};
-        AsyncChannel<cv::Mat> channel_{};
+        AsyncChannel<std::pair<cv::Mat, PointType>> channel_{};
 
         // Time tracking
         std::chrono::steady_clock::time_point start_{std::chrono::steady_clock::now()};

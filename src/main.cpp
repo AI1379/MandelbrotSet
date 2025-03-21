@@ -13,11 +13,12 @@
 #include <queue>
 #include <ranges>
 #include <thread>
+#include "Algorithm.h"
+#include "ColorSchemes.h"
 #include "MandelbrotSet.h"
 #include "MandelbrotSetCuda.h"
 #include "MandelbrotSetMPFR.h"
 #include "VideoGenerator.h"
-
 
 using namespace cv;
 using namespace std;
@@ -292,7 +293,10 @@ void asyncGenerateVideo(const CommandLineArguments &args) {
             .setSize(xsize, ysize)
             .setMaxStep(max_step)
             .setZoomFactor(zoom_factor)
-            .setScaleRate(scale_rate);
+            .setScaleRate(scale_rate)
+            .setColors(Mandelbrot::colorScheme2())
+            .autoDetect()
+            .showGrid();
 
     generator.start();
 }
@@ -306,7 +310,7 @@ int main(int argc, char **argv) {
 
     cout << "Current implementation: " << CURRENT_IMPLEMENTATION << endl;
 
-#if 0
+#if 1
     if (args.video) {
         asyncGenerateVideo(args);
     } else {
@@ -317,7 +321,7 @@ int main(int argc, char **argv) {
     Mandelbrot::MandelbrotSetCuda mandelbrot_set;
     mandelbrot_set.setResolution(args.width, args.height)
             .setCenter(args.x_center, args.y_center, args.xsize)
-            .setColors(Mandelbrot::colorScheme2());
+            .setColors(Mandelbrot::randomScheme());
 
     auto esc_map = mandelbrot_set.generateRawMatrix();
     auto image = mandelbrot_set.generate();
@@ -367,9 +371,9 @@ int main(int argc, char **argv) {
         cv::line(image, cv::Point(l, t + k * h), cv::Point(r, t + k * h), cv::Scalar(0, 255, 0), 2);
     }
 
-    cv::line(image, cv::Point(0, center.y), cv::Point(image.cols, center.y), cv::Scalar(255, 0, 0), 2);
-    cv::line(image, cv::Point(center.x, 0), cv::Point(center.x, image.rows), cv::Scalar(255, 0, 0), 2);
-    cv::circle(image, center, 30, cv::Scalar(255, 0, 0), 2);
+    cv::line(image, cv::Point(0, center.y), cv::Point(image.cols, center.y), cv::Scalar(0, 0, 255), 2);
+    cv::line(image, cv::Point(center.x, 0), cv::Point(center.x, image.rows), cv::Scalar(0, 0, 255), 2);
+    cv::circle(image, center, 30, cv::Scalar(0, 0, 255), 2);
 
     imwrite("MandelbrotSetCudaGrad.png", high_gradient_image);
     imwrite("MandelbrotSetCuda.png", image);

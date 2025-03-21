@@ -3,7 +3,6 @@
 //
 
 #include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
 #include "ExtendedDouble.cuh"
 #include "MandelbrotSetCuda.h"
 
@@ -23,7 +22,6 @@ namespace Mandelbrot {
                                                  size_t width, size_t height, // NOLINT
                                                  double x_min, double x_max, // NOLINT
                                                  double y_min, double y_max) {
-        constexpr auto ESCAPE_RADIUS_SQ = MandelbrotSetCuda::ESCAPE_RADIUS_SQ;
         const int x = blockIdx.x * blockDim.x + threadIdx.x;
         const int y = blockIdx.y * blockDim.y + threadIdx.y;
         if (x >= width || y >= height) {

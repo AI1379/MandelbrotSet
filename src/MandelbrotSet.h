@@ -16,9 +16,6 @@ namespace Mandelbrot {
 
     public:
         friend Base;
-        constexpr static size_t MAX_ITERATIONS = 1000;
-        constexpr static double ESCAPE_RADIUS = 2.0;
-        constexpr static size_t COLOR_CYCLE = 50;
 
         MandelbrotSet() = default;
         MandelbrotSet(const size_t width, const size_t height) : BaseMandelbrotSet(width, height) {}
@@ -26,7 +23,6 @@ namespace Mandelbrot {
     private:
         [[nodiscard]] cv::Mat generateRawMatrixImpl() const;
         [[nodiscard]] static size_t computeEscapeTime(const std::complex<double> &c);
-        [[nodiscard]] static cv::Vec3b computeColor(size_t escape_time);
     };
 
 } // namespace Mandelbrot
