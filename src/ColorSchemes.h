@@ -12,6 +12,7 @@ namespace Mandelbrot {
     ColorSchemeType colorScheme1();
     ColorSchemeType colorScheme2();
     ColorSchemeType randomScheme();
+    ColorSchemeType normalDistScheme();
 
 } // namespace Mandelbrot
 

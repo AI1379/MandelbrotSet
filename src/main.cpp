@@ -196,8 +196,10 @@ error:
 
 void generateImage(const CommandLineArguments &args) {
     DefaultMandelbrotSet mandelbrot_set;
-    mandelbrot_set.setResolution(args.width, args.height);
-    mandelbrot_set.setXRange(args.x_min, args.x_max).setYRange(args.y_min, args.y_max);
+    mandelbrot_set.setResolution(args.width, args.height)
+            .setXRange(args.x_min, args.x_max)
+            .setYRange(args.y_min, args.y_max)
+            .setColors(Mandelbrot::normalDistScheme());
 
     cout << fixed << setprecision(2);
     cout << "Resolution: " << mandelbrot_set.getWidth() << " x " << mandelbrot_set.getHeight() << endl;
@@ -208,9 +210,9 @@ void generateImage(const CommandLineArguments &args) {
     const auto image_cuda = mandelbrot_set.generate();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto diff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-    cout << "Time taken to generate the image using CUDA: " << diff.count() << " seconds" << endl;
+    cout << "Time taken to generate the image: " << diff.count() << " seconds" << endl;
 
-    auto filename = args.set_output ? args.output : "MandelbrotSetCuda.png";
+    auto filename = args.set_output ? args.output : "MandelbrotSet.png";
     imwrite(filename, image_cuda);
 }
 
