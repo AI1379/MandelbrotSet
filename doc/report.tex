@@ -8,6 +8,8 @@
 \usepackage[
     left=1in,
     right=1in,
+    top=1in,
+    bottom=1in
 ]{geometry}
 \usepackage{amsmath}
 \usepackage{amsfonts}
@@ -15,6 +17,10 @@
 \usepackage[ruled,vlined]{algorithm2e}
 \usepackage{listings}
 \usepackage{color}
+\usepackage{tikz}
+\usepackage{hyperref}
+
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
@@ -97,15 +103,6 @@
     \end{definition}
 
     This function measures the escape speed of the sequence $\{z_n\}$.
-    Then, we can define the \textbf{layer set} as follows:
-
-    \begin{definition}
-        \begin{equation}
-            L_n = \{c \in \mathbb{C} : L(c) = n \} \label{eq:layer_set}
-        \end{equation}
-    \end{definition}
-
-    We assert that for all $n$, $L_n$ is a connected set.
     With these definitions and properties, we can generate the image of the Mandelbrot set and explore its properties.
 
 
@@ -230,9 +227,125 @@
     To implement this, we need to adjust the scale of the image and the center of the image.
     OpenCV provides several functions to generate the scale matrix, and we can use the \textit{warpAffine}
     function to adjust the image.
+    These code are in \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/VideoGenerator.h}
+    {\texttt{src/VideoGenerator.h}}.
+
 
     \section{Optimizations}\label{sec:optimizations}
 
+    To optimize the efficiency and precision of the Mandelbrot set generation, we introduce several optimizations.
+
+    \subsection{Parallelism}\label{subsec:parallelism}
+
+    In CPU versions, we use OpenMP to parallelize the computation of layer functions on each pixel.
+    Thanks to the integrated OpenMP support in modern compilers, we can implement parallelism with minimal code as
+    follows:
+
+    \begin{lstlisting}[gobble=8, label={lst:openmp_parallel_for}]
+        #pragma omp parallel for
+    \end{lstlisting}
+
+    In GPU versions, we use CUDA to accelerate the computation of layer functions.
+    We split the image into blocks and assign each block to a CUDA thread.
+    Then, we can compute the layer function for each pixel in parallel.
+    These code are in \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/MandelbrotSetCuda.cu}
+    {\texttt{src/MandelbrotSetCuda.cu}}
+
+    \subsection{Asynchronous pipeline}\label{subsec:asynchronous-pipeline}
+
+    In video generation, the asynchronous workflow is a bit more complex.
+    Thus, we introduce \texttt{P2300 - std::execution}\textsuperscript{\cite{P2300Proposal}}
+    to build the asynchronous pipeline.
+    The P2300 proposal provides a high-level abstraction for asynchronous execution, which is a candidate for standard
+    C++ asynchrony and likely to be included in the C++26.
+    An implementation of the asynchronous pipeline is available in GitHub repository
+    \texttt{NVIDIA/stdexec}\textsuperscript{\cite{stdexec}}.
+    As for the video generation, we design this asynchronous pipeline:
+
+    \vspace{0.5cm}
+
+    \begin{tikzpicture}[
+        node distance=1.5cm,
+        startstop/.style={
+            rectangle,
+            rounded corners,
+            minimum width=2cm,
+            minimum height=0.8cm,
+            text centered,
+            draw=black,
+            fill=red!30
+        },
+        process/.style={
+            rectangle,
+            minimum width=2cm,
+            minimum height=0.8cm,
+            text centered,
+            draw=black,
+            fill=blue!30
+        },
+        decision/.style={
+            diamond,
+            aspect=2.5,
+            minimum width=1cm,
+            minimum height=1cm,
+            text centered,
+            draw=black,
+            fill=green!30
+        },
+        arrow/.style={
+            thick,
+            ->,
+            >=Stealth[round]
+        }
+    ]
+        \node (start) [startstop] {Start};
+        \node (coro) [process, below=1cm of start] {Start coroutine};
+        \node (generate) [process, right=1cm of start] {Generate frame};
+        \node (detect) [process, right=1cm of generate] {Detect boundary};
+        \node (send) [process, right=1cm of detect] {Send frame};
+        \node (stopsignal) [process, below=2cm of send] {Send stop signal};
+        \node (zoom) [process, right=1cm of coro] {Zoom in};
+        \node (wait) [process, right=1cm of zoom] {Wait for next frame};
+        \node (waitsignal) [decision, below=1cm of wait] {Signal received?};
+        \node (waitqueue) [process, below=1cm of waitsignal] {Wait for all queued works};
+        \node (waitall) [process, below right=0.5cm and -2cm of waitqueue] {Wait for all works};
+        \node (end) [startstop, below=0.5cm of waitall] {End};
+
+        \draw [arrow] (start) -- (generate);
+        \draw [arrow] (generate) -- (detect);
+        \draw [arrow] (detect) -- (send);
+        \draw [->] (send) -- node[midway] {Generating next frame} ++(0, 1) -| (generate);
+        \draw [arrow] (start) -- (coro);
+        \draw [arrow] (coro) -- (zoom);
+        \draw [arrow] (zoom) -- (wait);
+        \draw [<-, dashed] (wait) --node {Get key frame} (send);
+        \draw [->] (wait) -- (waitsignal);
+        \draw [->] (waitsignal) -- node[left] {Yes} (waitqueue);
+        \draw [->] (waitsignal) -- node[above] {No} ++(-3, 0) -| (zoom);
+        \draw [arrow] (send) -- (stopsignal);
+        \draw [arrow] (waitqueue) |- (waitall);
+        \draw [arrow] (stopsignal) |- (waitall);
+        \draw [arrow] (waitall) -- (end);
+
+    \end{tikzpicture}
+
+    \vspace{0.5cm}
+
+    With the facilities provided by the P2300 proposal, we can build a high-performance asynchronous pipeline for video
+    generation.
+    These code are in \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/VideoGenerator.h}
+    {\texttt{src/VideoGenerator.h}}.
+
+    \subsection{Precision optimization}\label{subsec:precision-optimization}
+
+    To optimize the precision of the Mandelbrot set, we introduce the \texttt{ExtendedDouble}
+    type to store floating-point numbers with extended precision.
+    It is implemented by combining an extra \texttt{int} to store the exponent and a \texttt{double}
+    to store the mantissa.
+    It is useful for high-precision computation, while its performance is comparable to the \texttt{double}
+    and much faster than \texttt{mpfr\_t}.
+    The implementation is in \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/ExtendedDouble.cu}
+    {\texttt{src/ExtendedDouble.cu}}
 
     \bibliography{references}
     \bibliographystyle{plain}
