@@ -104,5 +104,35 @@ It is recommended using `ninja` as the generator for better performance.
 Assuming that the executable is named `mandelbrot`. You can run `mandelbrot --help` to see the usage.
 
 ```text
+A simple Mandelbrot set generator
 
+Usage: mandelbrot [options]
+Options:
+    -o / --output <filename>                       Set the filename of the output file
+    --resolution <width> <height>                  Set the resolution of the image
+    --width <width>                                Set the width of the image
+    --height <height>                              Set the height of the image
+    --xmin <xmin>                                  Set the minimum x value
+    --xmax <xmax>                                  Set the maximum x value
+    --ymin <ymin>                                  Set the minimum y value
+    --ymax <ymax>                                  Set the maximum y value
+    --range <xmin> <xmax> <ymin> <ymax>            Set the range of x and y values
+    --center <xcenter> <ycenter> <xsize> <ysize>   Set the center and size for video
+    --video <max_step> <zoom_factor> <scale_rate>  Generate a zooming animation
+    --with-keyframes                               Generate keyframes for the video
+    --auto-detect                                  Automatically detect keyframes
+    --show-grid                                    Show grid on keyframes
+    --help                                         Display this help message
+
+Default values:
+    width: 2048
+    height: 2048
+    xmin: -2.0
+    xmax: 2.0
+    ymin: -2.0
+    ymax: 2.0
+
+Example:
+    mandelbrot --resolution 2048 2048 --xmin -2.0 --xmax 2.0 --ymin -2.0 --ymax 2.0
+    mandelbrot --video 100 4.0 1.03 --center -0.74525 0.12265 4.0 5.0
 ```

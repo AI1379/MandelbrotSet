@@ -4,16 +4,12 @@
 
 #include <cassert>
 #include <chrono>
-#include <cstdlib>
 #include <iostream>
 #include <opencv2/core/utils/logger.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/videoio.hpp>
 #include <queue>
 #include <ranges>
 #include <thread>
-#include "Algorithm.h"
 #include "ColorSchemes.h"
 #include "MandelbrotSet.h"
 #include "MandelbrotSetCuda.h"
@@ -87,7 +83,7 @@ Default values:
 
 Example:
     mandelbrot --resolution 2048 2048 --xmin -2.0 --xmax 2.0 --ymin -2.0 --ymax 2.0
-    mandelbrot --video 100 4.0 1.03 --center -0.74525 0.12265 4.0 5.0
+    mandelbrot --video 5 4.0 1.03 --center -0.74525 0.12265 4.0 4.0
 )";
 
 CommandLineArguments parseArguments(int argc, char **argv_raw) {
