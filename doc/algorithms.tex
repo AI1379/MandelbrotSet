@@ -1,3 +1,5 @@
+\subsection{Escape Time Algorithm}\label{subsec:escape_time_algorithm}
+
 To generate the Mandelbrot set, we use the \textbf{Escape Time Algorithm}.
 
 \begin{algorithm}[H]
@@ -16,11 +18,13 @@ To generate the Mandelbrot set, we use the \textbf{Escape Time Algorithm}.
 
 The iteration threshold $N$ is conventionally configured at $N = 1000$
 , which establishes a balance between computational efficiency and visual fidelity.
-Our implementation employs this parameterization scheme for fractal generation.
+
+\subsection{Boundary Detection}\label{subsec:boundary_detection}
 
 To enhance the structural analysis, we introduce a boundary detection methodology based on the gradient field of the
 layer function.
-This approach enables the reconstruction of high-fidelity visualizations preserving the set's topological features.
+This enables us to automatically detect the boundary of the Mandelbrot set and zoom in on the area with the most
+detailed structure.
 Specifically, we use the Sobel operator\textsuperscript{\cite{sobel1968isotropic}}
 to compute the discrete gradient approximation.
 
@@ -55,11 +59,11 @@ This simplification allows for a more computationally efficient.
 Then, we set \textit{GradientThreshold}
 to 0.5, and pick out the pixels with gradient magnitude higher than the threshold.
 These pixels are likely to be on the edge of the Mandelbrot set, so we can automatically detect the boundary of the
-set.
+set, and zoom in on this area to reveal more fractal features.
 
 Here is the implementation:
 
-\begin{lstlisting}[label={lst:detect_high_gradient}, gobble=8]
+\begin{lstlisting}[label={lst:detect_high_gradient}, gobble=4]
     cv::Mat detectHighGradient(const cv::Mat &matrix) {
         constexpr static double GRADIENT_THRESHOLD = 0.5;
 
@@ -116,7 +120,7 @@ Here is the pseudocode:
 We pick out the maximum block and set its center as the new center of the image.
 Then, we zoom in on this area to get a more detailed image of the boundary.
 To implement this, we need to adjust the scale of the image and the center of the image.
-OpenCV provides several functions to generate the scale matrix, and we can use the \textit{warpAffine}
+OpenCV provides several functions to generate the scale matrix, and we can use the \texttt{cv::warpAffine}
 function to adjust the image.
-These code are in \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/VideoGenerator.h}
-{\texttt{src/VideoGenerator.h}}.
+These code are in
+\href{https://github.com/AI1379/MandelbrotSet/blob/master/src/VideoGenerator.h}{\texttt{src/VideoGenerator.h}}.

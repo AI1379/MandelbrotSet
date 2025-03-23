@@ -5,12 +5,323 @@
 \documentclass[11pt]{article}
 
 % Packages
-\usepackage{amsmath}
+\usepackage[
+    left=0.8in,
+    right=0.8in,
+    top=0.8in,
+    bottom=0.8in
+]{geometry}
 \usepackage[UTF8]{ctex}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{graphicx}
 
+\linespread{1.2}
+
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstset{
+    frame=tb,
+    language=C++,
+    basicstyle={\small\ttfamily},
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{blue}\bfseries,
+    numberstyle=\tiny\color{codegray}\ttfamily,
+    stringstyle=\color{codepurple}\ttfamily,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=4
+}
+
+\newtheorem{definition}{定义}
+\newtheorem{property}{性质}
+
+\title{关于Mandelbrot集的报告}
+\author{Renatus Madrigal}
+\date{\today}
 % Document
 \begin{document}
 
+    \maketitle
 
 
+    \section{摘要}\label{sec:abstract}
+
+    Mandelbrot 集是一个有趣的集合，具有自相似性和分形性。
+    这个项目探索了 Mandelbrot 集和它的一些性质，并基于 C++ 和 OpenCV 提供了一个 Mandelbrot 集的可视化展示。
+    我们将引入逃逸时间算法来生成 Mandelbrot 集，并使用 Sobel 算子做边界探测。
+    我们还引入了一些优化，包括并行计算和创建异步流水线，以及一些精度上的优化。
+    这个可视化项目展现了 Mandelbrot 集中独有的复杂与美妙。
+
+
+    \section{背景}\label{sec:background}
+
+    \begin{definition}
+        令 $f_c(z) = z^2 + c$，其中 $z, c \in \mathbb{C}$。
+        复数列 $z_n$ 满足：$z_0 = 0$ 且 $z_{n+1} = f_c(z_n)$。
+        Mandelbrot 集是所有满足 $|z_n|$ 收敛的复数 $c$ 的集合。
+        形式化地说，Mandelbrot 集定义为：
+        \begin{equation}
+            \label{eq:mandelbrot_set_define}
+            M = \{c \in \mathbb{C} : \lim_{n \to \infty} |z_n| < \infty\}
+        \end{equation}
+    \end{definition}
+
+    可以证明\textsuperscript{\cite{branner1989mandelbrot}}，Mandelbrot 集具有以下性质：
+
+    \begin{property}
+        \label{property:bounded}
+        $\forall c \in M,\ n \in \mathbb{N}_+ ,\ |z_n| \leq 2$
+    \end{property}
+
+    因此，我们可以定义\textbf{逃逸时间函数}：
+
+    \begin{definition}
+        令 $f_c(z) = z^2 + c$，其中 $z, c \in \mathbb{C}$。
+        逃逸时间函数 $L_c(z)$ 定义为：
+        \begin{equation}
+            L(c) = \min\{n : z_n > 2\}\label{eq:layer_function}
+        \end{equation}
+    \end{definition}
+
+    这个函数衡量了序列 $\{z_n\}$ 发散的速率。
+
+
+    \section{算法}\label{sec:algorithm}
+
+    \subsection{逃逸时间算法}\label{subsec:escape_time_algorithm}
+
+    为了生成 Mandelbrot 集，我们使用\textbf{逃逸时间算法}。
+
+    \begin{algorithm}[H]
+        \SetAlgoLined
+        \caption{Escape Time Algorithm}
+        \label{alg:escape_time_algorithm}
+        \KwData{Complex number $c$, maximum number of iterations $N$}
+        \KwResult{Number of iterations $n$}
+        z = 0\;
+        \While{$|z| \leq 2$ and $n < N$}{
+            $z \leftarrow z^2 + c$\;
+            $n \leftarrow n + 1$\;
+        }
+        \Return $n$\;
+    \end{algorithm}
+
+    迭代阈值 $N$ 通常设定为 $N = 1000$，从而在计算效率和视觉效果之间取得平衡。
+
+    \subsection{边界探测}\label{subsec:boundary_detection}
+
+    为了更好地分析 Mandelbrot 集的结构，我们引入了一种基于逃逸时间函数的梯度场的边界探测方法。
+    具体来说，我们使用 Sobel 算子\textsuperscript{\cite{sobel1968isotropic}}来计算离散梯度的近似值。
+
+    Sobel 算子定义如下：
+
+    \begin{equation}
+        \label{eq:sobel_operator}
+        G_x = \begin{bmatrix}
+                  -1 & 0 & 1 \\
+                  -2 & 0 & 2 \\
+                  -1 & 0 & 1
+        \end{bmatrix}
+        \quad
+        G_y = \begin{bmatrix}
+                  -1 & -2 & -1 \\
+                  0  & 0  & 0  \\
+                  1  & 2  & 1
+        \end{bmatrix}
+    \end{equation}
+
+    然后，梯度幅度计算如下：
+
+    \begin{equation}
+        \label{eq:gradient_magnitude}
+        \parallel \nabla L \parallel \ = \sqrt{(G_x * L)^2 + (G_y * L)^2}
+    \end{equation}
+
+    然而，在实际中，我们通常取两个分量的算术平均值作为梯度幅度。
+    这种简化使得计算更加高效。
+
+    接着，我们将 \textit{GradientThreshold} 设为 0.5，选出梯度幅度高于这个阈值的像素点。
+    这些像素点比较靠近 Mandelbrot 集的边界，因此我们可以在这些区域放大，从而展示更多的细节。
+
+    得到 mask 后，我们可以探测其中梯度幅度较高的像素点，他们极有可能在 Mandelbrot 集的分形边界上。
+    具体而言，我们将整个矩阵划分为不同的块，对于每一个块，我们计算其中梯度幅度大于阈值的点的个数。
+    然后，我们可以选取这个值最大的块，放大这个块，从而展示 Mandelbrot 集的分形特征。
+    以下是伪代码：
+
+    \begin{algorithm}[H]
+        \SetAlgoLined
+        \caption{Detect Boundary}
+        \label{alg:detect_boundary}
+        \KwResult{Boundary area}
+        $mask,\ maxHighGradientPixels,\ maxBlock \leftarrow detectHighGradient(matrix),\ 0,\ null$\;
+        Split matrix into $n \times n$ blocks\;
+        \For{each block}{
+            Count the number of high gradient pixels\;
+            \If{high gradient pixels > maxHighGradientPixels}{
+                $maxHighGradientPixels,\ maxBlock \leftarrow high gradient pixels,\ block$\;
+            }
+        }
+        \Return maxBlock\;
+    \end{algorithm}
+
+    我们把最大的一块取出来，然后将它的中心设置为新的中心。
+    然后，放大这块区域，重新生成图像，从而获得更多的细节。
+    为了实现这个，我们需要调整图像的缩放和中心。
+    OpenCV 提供了一些相关函数来生成缩放矩阵，并且可以直接使用 \texttt{cv::warpAffine} 函数来实现缩放。
+    这些代码在
+    \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/VideoGenerator.h}{\texttt{src/VideoGenerator.h}} 中。
+
+
+    \section{优化}\label{sec:optimizations}
+
+    为了优化运行效率和精度，我们引入了一些优化方法。
+
+    \subsection{并行计算}\label{subsec:parallelism}
+
+    因为 Mandelbrot 集中每一个像素都是独立的，因此我们可以并行计算每一个像素的逃逸时间。
+    我们引入了 OpenMP 或者 CUDA 来实现并行计算。
+
+    在 CPU 版本的实现中，我们使用 OpenMP 来并行计算每一个像素的逃逸时间。
+    由于现代编译器已经集成了 OpenMP 的支持，我们可以很容易地实现并行计算，如下所示：
+
+    \begin{lstlisting}[label={lst:openmp_parallel_for}, gobble=8]
+        #pragma omp parallel for
+    \end{lstlisting}
+
+    在 GPU 版本的实现中，我们使用 CUDA 来加速逃逸时间的计算。
+    我们将图像划分为不同的块，然后为每一个块分配一个 CUDA 线程。
+    这样，我们可以并行计算每一个像素的逃逸时间。
+    这些代码可以在 \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/MandelbrotSetCuda.cu}
+    {\texttt{src/MandelbrotSetCuda.cu}} 中找到。
+
+    \subsection{异步流水线}\label{subsec:asynchronous-pipeline}
+
+    在视频生成中，我们需要构建一个更复杂的异步流水线。
+    因此，我们引入了 \texttt{std::execution}\textsuperscript{\cite{P2300Proposal}} 来构建异步流水线。
+    P2300 提案提供了一个高层次的抽象，是 C++ 标准异步模型的一个候选，极有可能进入 C++26 标准。
+    基于此，我们设计了这样的一个异步流水线：
+
+    \vspace{0.1cm}
+
+    \begin{center}
+        \begin{tikzpicture}[
+            node distance=1.5cm,
+            startstop/.style={
+                rectangle,
+                rounded corners,
+                minimum width=2cm,
+                minimum height=0.8cm,
+                text centered,
+                draw=black,
+                fill=red!30
+            },
+            process/.style={
+                rectangle,
+                minimum width=2cm,
+                minimum height=0.8cm,
+                text centered,
+                draw=black,
+                fill=blue!30
+            },
+            decision/.style={
+                diamond,
+                aspect=3,
+                minimum width=1cm,
+                minimum height=1cm,
+                text centered,
+                draw=black,
+                fill=green!30
+            },
+            arrow/.style={
+                thick,
+                ->,
+                >=Stealth[round]
+            }
+        ]
+            \node (start) [startstop] {开始};
+            \node (coro) [process, below=0.8cm of start] {启动协程};
+            \node (generate) [process, right=1.2cm of start] {生成关键帧};
+            \node (detect) [process, right=1.2cm of generate] {检测边界};
+            \node (send) [process, right=1.5cm of detect] {发送关键帧};
+            \node (stopsignal) [process, below=1.6cm of send] {发送停止信号};
+            \node (zoom) [process, right=1.2cm of coro] {放大};
+            \node (wait) [process, right=1.2cm of zoom] {等待下一帧};
+            \node (waitsignal) [decision, below=0.8cm of wait] {是否受到信号？};
+            \node (waitqueue) [process, below=0.8cm of waitsignal] {等待队列中的任务完成};
+            \node (waitall) [process, below right=0.5cm and -2cm of waitqueue] {等待所有任务完成};
+            \node (end) [startstop, below=0.5cm of waitall] {结束};
+
+            \draw [arrow] (start) -- (generate);
+            \draw [arrow] (generate) -- (detect);
+            \draw [arrow] (detect) -- (send);
+            \draw [->] (send) -- node[midway] {生成下一帧} ++(0, 1) -| (generate);
+            \draw [arrow] (start) -- (coro);
+            \draw [arrow] (coro) -- (zoom);
+            \draw [arrow] (zoom) -- (wait);
+            \draw [<-, dashed] (wait) --node {获取关键帧} (send);
+            \draw [arrow] (wait) -- (waitsignal);
+            \draw [->] (waitsignal) -- node[left] {是} (waitqueue);
+            \draw [->] (waitsignal) -- node[above] {否} ++(-3, 0) -| (zoom);
+            \draw [arrow] (send) -- (stopsignal);
+            \draw [arrow] (waitqueue) -- (waitall);
+            \draw [arrow] (stopsignal) -- (waitall);
+            \draw [arrow] (waitall) -- (end);
+
+        \end{tikzpicture}
+    \end{center}
+
+    依靠 P2300 提案提供的工具，我们可以很容易地构建这样一个异步流水线，从而实现高性能的视频生成。
+    这些代码在 \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/VideoGenerator.h}
+    {\texttt{src/VideoGenerator.h}} 中。
+
+    \subsection{精度优化}\label{subsec:precision-optimization}
+
+    为了提高计算精度，我们引入了\texttt{ExtendedDouble} 类型来存储更多的有效数字。
+    这个类通过一个额外的\texttt{int}来存储有效数字的位数，从而提高了计算的精度。
+    这在高精度计算中非常有用，同时它的性能可以接收，且远高于\texttt{mpfr\_t}。
+    具体的实现参见\href{https://github.com/AI1379/MandelbrotSet/blob/master/src/ExtendedDouble.cu}
+    {\texttt{src/ExtendedDouble.cu}}。
+
+
+    \section{结论}\label{sec:conclusion}
+
+    在这个项目中，我们探索了 Mandelbrot 集及其性质，并基于 OpenCV 和 CUDA 提供了一个 Mandelbrot 集的可视化展示。
+    我们引入了逃逸时间算法来生成 Mandelbrot 集，以及 Sobel 算子用于边界探测。
+    我们还优化了生成过程，包括并行计算、异步流水线和精度优化。
+    这些优化显著提高了 Mandelbrot 集生成的效率和精度。
+
+    最后，我们成功生成了 Mandelbrot 集的高保真度可视化，以及对应的视频。
+    由于我们采用了随机的颜色方案，因此每一张生成的图片都是独一无二的，具有较好的视觉效果。
+    以下是一个生成的图片的例子：
+
+    \begin{figure}[htbp]
+        \label{fig:figure}
+        \centering
+        \includegraphics[width=0.4\textwidth]{MandelbrotSet}
+        \caption{Mandelbrot set}
+    \end{figure}
+
+    \bibliography{references}
+    \bibliographystyle{plain}
 \end{document}

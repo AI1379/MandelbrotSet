@@ -9,7 +9,7 @@ In CPU versions, we use OpenMP to parallelize the computation of layer functions
 Thanks to the integrated OpenMP support in modern compilers, we can implement parallelism with minimal code as
 follows:
 
-\begin{lstlisting}[gobble=8, label={lst:openmp_parallel_for}]
+\begin{lstlisting}[gobble=4, label={lst:openmp_parallel_for}]
     #pragma omp parallel for
 \end{lstlisting}
 
@@ -17,7 +17,7 @@ In GPU versions, we use CUDA to accelerate the computation of layer functions.
 We split the image into blocks and assign each block to a CUDA thread.
 Then, we can compute the layer function for each pixel in parallel.
 These code are in \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/MandelbrotSetCuda.cu}
-{\texttt{src/MandelbrotSetCuda.cu}}
+{\texttt{src/MandelbrotSetCuda.cu}} .
 
 \subsection{Asynchronous pipeline}\label{subsec:asynchronous-pipeline}
 
@@ -26,8 +26,9 @@ Thus, we introduce \texttt{P2300 - std::execution}\textsuperscript{\cite{P2300Pr
 to build the asynchronous pipeline.
 The P2300 proposal provides a high-level abstraction for asynchronous execution, which is a candidate for standard
 C++ asynchrony and likely to be included in the C++26.
-An implementation of the asynchronous pipeline is available in GitHub repository
+An experimental implementation of it is available in GitHub repository
 \texttt{NVIDIA/stdexec}\textsuperscript{\cite{stdexec}}.
+
 As for the video generation, we design this asynchronous pipeline:
 
 \vspace{0.5cm}
@@ -113,4 +114,4 @@ to store the mantissa.
 It is useful for high-precision computation, while its performance is comparable to the \texttt{double}
 and much faster than \texttt{mpfr\_t}.
 The implementation is in \href{https://github.com/AI1379/MandelbrotSet/blob/master/src/ExtendedDouble.cu}
-{\texttt{src/ExtendedDouble.cu}}
+{\texttt{src/ExtendedDouble.cu}}.
