@@ -5,6 +5,10 @@
 #ifndef MANDELBROTSET_INCLUDE_MANDELBROT_MANDELBROTSET_H
 #define MANDELBROTSET_INCLUDE_MANDELBROT_MANDELBROTSET_H
 
+/**
+ * @file MandelbrotSet.h
+ */
+
 #include <complex>
 #include <opencv2/core/mat.hpp>
 #include "BaseMandelbrotSet.h"

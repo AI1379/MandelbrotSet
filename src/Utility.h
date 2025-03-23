@@ -5,6 +5,11 @@
 #ifndef MANDELBROTSET_SRC_UTILITY_H
 #define MANDELBROTSET_SRC_UTILITY_H
 
+/**
+ * @file Utility.h
+ * @brief The utility header file.
+ */
+
 #include <chrono>
 #if __cpp_lib_print >= 202207L
 #include <print>
@@ -25,14 +30,30 @@ namespace ex = stdexec;
 
 namespace Mandelbrot {
 
+    /**
+     * @brief The async channel for communication between threads and coroutines.
+     * @tparam T The type of the channel.
+     * @note The channel is thread-safe.
+     */
     template<typename T>
     struct AsyncChannel {
+
+        /**
+         * @brief Send the data to the channel.
+         * @tparam Args The types of the arguments.
+         * @param args The arguments.
+         */
         template<typename... Args>
         void send(Args... args) {
             std::lock_guard lock(mutex);
             queue.emplace(std::forward<T>(args)...);
         }
 
+        /**
+         * @brief Receive the data from the channel.
+         * @return The data.
+         * @note This function returns a sender, which is a coroutine. Thus it is awaitable.
+         */
         ex::sender auto receive() {
             return ex::just() | ex::then([this]() -> std::optional<T> {
                        if (queue.empty()) {
@@ -45,6 +66,10 @@ namespace Mandelbrot {
                    });
         }
 
+        /**
+         * @brief Check if the channel is empty.
+         * @return True if the channel is empty, false otherwise.
+         */
         bool empty() const { return queue.empty(); }
 
     private:
@@ -53,6 +78,9 @@ namespace Mandelbrot {
     };
 
     // Unfortunately exec::scope_guard is not working as expected. We need to implement our own.
+    /**
+     * @brief The scope guard.
+     */
     struct ScopeGuard {
         explicit ScopeGuard(std::function<void()> func) : func(std::move(func)) {}
         ~ScopeGuard() { func(); }

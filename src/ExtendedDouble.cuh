@@ -5,6 +5,11 @@
 #ifndef MANDELBROTSET_INCLUDE_MANDELBROT_EXPANDDOUBLE_CUH
 #define MANDELBROTSET_INCLUDE_MANDELBROT_EXPANDDOUBLE_CUH
 
+/**
+ * @file ExtendedDouble.cuh
+ * @brief ExtendedDouble class definition
+ */
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>

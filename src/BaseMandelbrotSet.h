@@ -5,6 +5,10 @@
 #ifndef MANDELBROTSET_INCLUDE_MANDELBROT_BASEMANDELBROTSET_H
 #define MANDELBROTSET_INCLUDE_MANDELBROT_BASEMANDELBROTSET_H
 
+/**
+ * @file BaseMandelbrotSet.h
+ */
+
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -15,6 +19,10 @@ namespace Mandelbrot {
     constexpr static double ESCAPE_RADIUS = 2.0;
     constexpr static double ESCAPE_RADIUS_SQ = ESCAPE_RADIUS * ESCAPE_RADIUS;
 
+    /**
+     * @brief The base class for Mandelbrot set.
+     * @tparam Derived The derived class.
+     */
     template<typename Derived>
     class BaseMandelbrotSet {
     public:
@@ -85,9 +93,19 @@ namespace Mandelbrot {
             return *static_cast<Derived *>(this);
         }
 
-        // generateImpl should return a cv::Mat with CV_8UC3
+        /**
+         * @brief Generate the Mandelbrot set image.
+         * @return The Mandelbrot set image.
+         * @note The return type is cv::Mat with CV_8UC3.
+         */
         [[nodiscard]] cv::Mat generate() const { return colorize(generateRawMatrix()); }
 
+        /**
+         * @brief Colorize the matrix.
+         * @param matrix The matrix to colorize.
+         * @return The colorized image.
+         * @note The return type is cv::Mat with CV_8UC3.
+         */
         [[nodiscard]] cv::Mat colorize(const cv::Mat &matrix) const {
             assert(colors_);
             cv::Mat image(height_, width_, CV_8UC3);
@@ -101,7 +119,11 @@ namespace Mandelbrot {
             return image;
         }
 
-        // generateRawMatrixImpl should return cv::Mat with CV_32FC1
+        /**
+         * @brief Generate the raw matrix.
+         * @return The raw escape time matrix.
+         * @note The return type is cv::Mat with CV_32FC1.
+         */
         [[nodiscard]] cv::Mat generateRawMatrix() const {
             return static_cast<const Derived *>(this)->generateRawMatrixImpl();
         }

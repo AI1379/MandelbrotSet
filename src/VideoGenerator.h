@@ -5,6 +5,11 @@
 #ifndef MANDELBROTSET_SRC_VIDEOGENERATOR_H
 #define MANDELBROTSET_SRC_VIDEOGENERATOR_H
 
+/**
+ * @file VideoGenerator.h
+ * @brief The video generator header file.
+ */
+
 #include <exec/async_scope.hpp>
 #include <exec/static_thread_pool.hpp>
 #include <exec/task.hpp>
@@ -32,24 +37,38 @@
  */
 
 namespace Mandelbrot {
+
+    /**
+     * @brief The video generator class.
+     * @tparam MandelbrotSetImpl The Mandelbrot set implementation.
+     */
+    template<typename MandelbrotSetImpl =
+#ifdef ENABLE_CUDA
+                     MandelbrotSetCuda
+#else
+                     MandelbrotSet
+#endif
+             >
     class VideoGenerator {
     public:
         using PointType = cv::Point2d;
-
-#if ENABLE_CUDA
-        using MandelbrotSetImpl = Mandelbrot::MandelbrotSetCuda;
-#elif ENABLE_MPFR
-        using MandelbrotSetImpl = Mandelbrot::MandelbrotSetMPFR;
-#else
-        using MandelbrotSetImpl = Mandelbrot::MandelbrotSet;
-#endif
 
         // Constants for the grid detection
         constexpr static int DIVIDE = 7;
         constexpr static int BLOCK_SIZE = 4;
 
+        /**
+         * @brief Get the worker count.
+         * @return worker count
+         * @note The worker count is auto detected.
+         */
         unsigned int getWorkerCount() const { return worker_count_; }
 
+        /**
+         * @brief Get the IO count.
+         * @return IO count
+         * @note The IO count is auto detected.
+         */
         unsigned int getIOCount() const { return io_count_; }
 
         // Settings for video generation
@@ -116,6 +135,14 @@ namespace Mandelbrot {
             return *this;
         }
 
+        VideoGenerator &setVideoName(const std::string &video_name) {
+            video_name_ = video_name;
+            return *this;
+        }
+
+        /**
+         * @brief Start the video generation.
+         */
         void start() {
             println(stdout, "Generating video...");
             println(stdout, "Working threads: {}", worker_count_);
@@ -271,11 +298,6 @@ namespace Mandelbrot {
                                   cv::warpAffine(image, frames_[i], transform_matrices_[i],
                                                  cv::Size(mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight()));
                               }));
-
-                    // for (int i = 0; i < frame_count_; ++i) {
-                    //     cv::warpAffine(image, frames_[i], transform_matrices_[i],
-                    //                    cv::Size(mandelbrot_set_.getWidth(), mandelbrot_set_.getHeight()));
-                    // }
 
                     // Write the frames to the video.
                     // This has to be synchronous, otherwise the frames will be out of order.

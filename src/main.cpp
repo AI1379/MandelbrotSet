@@ -13,7 +13,6 @@
 #include "ColorSchemes.h"
 #include "MandelbrotSet.h"
 #include "MandelbrotSetCuda.h"
-#include "MandelbrotSetMPFR.h"
 #include "VideoGenerator.h"
 
 using namespace cv;
@@ -237,7 +236,8 @@ void asyncGenerateVideo(const CommandLineArguments &args) {
             .setScaleRate(scale_rate)
             .setColors(Mandelbrot::randomScheme())
             .setAutoDetect(args.auto_detect)
-            .setShowGrid(args.show_grid);
+            .setShowGrid(args.show_grid)
+            .setVideoName(args.output);
 
     generator.start();
 }

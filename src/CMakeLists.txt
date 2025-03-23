@@ -17,7 +17,6 @@ CPMAddPackage(
 
 set(MANDELBROT_SET_SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSet.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/VideoGenerator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ColorSchemes.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Algorithm.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
@@ -40,22 +39,6 @@ if (ENABLE_OPENMP)
         set(ENABLE_OPENMP OFF)
     else ()
         message(FATAL_ERROR "OpenMP is required but not supported by the compiler")
-    endif ()
-endif ()
-
-if (ENABLE_MPFR)
-    find_package(MPFR)
-    if (MPFR_FOUND)
-        list(APPEND MANDELBROT_SET_SOURCE
-                ${CMAKE_CURRENT_SOURCE_DIR}/MandelbrotSetMPFR.cpp)
-        message(STATUS "MPFR include dir: ${MPFR_INCLUDE_DIR}")
-        add_definitions(-DENABLE_MPFR)
-        list(APPEND MANDELBROT_SET_DEPENDENCIES MPFR::MPFR)
-    elseif (AUTO_DISABLE_REQ)
-        message(STATUS "MPFR is required but not found")
-        set(ENABLE_MPFR OFF)
-    else ()
-        message(FATAL_ERROR "MPFR is required but not found")
     endif ()
 endif ()
 

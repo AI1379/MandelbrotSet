@@ -14,10 +14,10 @@ If you like this project, please give me a star. Thanks! :smile:
 - [x] CPM for package management
 - [x] CI/CD on GitHub using GitHub actions.
 - [x] Better commandline interface
+- [x] Report and documentation
 - [ ] ~~BMP output without third-party library~~
 - [ ] ~~Benchmark~~
-- [ ] Report and documentation
-- [ ] Import AI to create memes based on the Mandelbrot set
+- [ ] Import StableDiffusion API to create memes based on the Mandelbrot set
 - [ ] Julia set
 
 ### Bonus Points
