@@ -16,7 +16,7 @@ $(REPORT).pdf: $(REPORT).tex $(REFERENCES).bib algorithms.tex optimizations.tex
 
 $(REPORT)-cn.pdf: $(REPORT)-cn.tex $(REFERENCES).bib
 	$(TEX) $(REPORT)-cn.tex
-	$(BIB) $(REPORT)
+	$(BIB) $(REPORT)-cn
 	$(TEX) $(REPORT)-cn.tex
 	$(TEX) $(REPORT)-cn.tex
 
