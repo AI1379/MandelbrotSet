@@ -103,7 +103,7 @@ CommandLineArguments parseArguments(int argc, char **argv_raw) {
             .scale_rate = 1.03,
             .with_key_frames = false,
             .set_output = false,
-            .output = "",
+            .output = "MandelbrotSet.mp4",
             .auto_detect = false,
             .show_grid = false,
     };
